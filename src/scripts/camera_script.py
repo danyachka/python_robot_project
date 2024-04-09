@@ -1,8 +1,11 @@
 from PIL import Image
+import numpy as np
+import cv2 as cv
 
 
-def onImage(image: Image):
+def onImage(image: np.ndarray):
     if image is None:
         return
 
-    image.show()
+    cv.imshow("Camera image", image)
+    cv.waitKey(1)
