@@ -1,6 +1,6 @@
 import sys
 import sim
-import scenes.scene_1 as scene_1
+import execution_scripts.scene_1 as scene_1
 
 
 sim.simxFinish(-1)  # just in case, close all opened connections
