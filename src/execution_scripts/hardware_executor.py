@@ -2,34 +2,45 @@ import numpy as np
 import sim
 import cv2 as cv
 
+from abc import ABCMeta, abstractmethod, abstractproperty
+
 from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation_tools import GyroscopeEmulator
 
 
 # How to create interfaces (abstract classes)?
 class HardwareExecutorModel:
+    __metaclass__ = ABCMeta
 
+    @abstractmethod
     def __init__(self):
         pass
 
+    @abstractmethod
     def readImage(self) -> np.ndarray:
         pass
 
-    def readGyro(self) -> [float]:
+    @abstractmethod
+    def readGyro(self) -> [float, float, float]:
         pass
 
+    @abstractmethod
     def readSonarData(self):
         pass
 
+    @abstractmethod
     def setSpeed(self, speed) -> None:
         pass
 
+    @abstractmethod
     def setRightSpeed(self, speed) -> None:
         pass
 
+    @abstractmethod
     def setLeftSpeed(self, speed) -> None:
         pass
 
+    @abstractmethod
     def rotate(self, angle) -> None:
         pass
 
@@ -76,8 +87,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         res, self.robot_handle = sim.simxGetObjectHandle(clientId, './robot', sim.simx_opmode_blocking)
         print(f'Robot handel - {res is sim.simx_return_ok}')
-
         self.gyroscopeEmulator = GyroscopeEmulator()
+
+        self.readGyro()
 
     def setAnalyser(self, analyser):
         self.analyser = analyser
@@ -97,7 +109,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             print("Failed to capture image.")
             return None
 
-    def readGyro(self) -> [float]:
+    def readGyro(self) -> [float, float, float]:
         res, euler_angles = (
             sim.simxGetObjectOrientation(self.clientId, self.robot_handle, -1, sim.simx_opmode_blocking))
 
@@ -133,7 +145,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         self.isRotating = True
 
-        v = 0.6
+        listener = RotationListener(self, angle)
+
+        v = 1
         if angle > 0:
             self.setLeftSpeed(-v)
             self.setRightSpeed(v)
@@ -141,7 +155,6 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             self.setLeftSpeed(v)
             self.setRightSpeed(-v)
 
-        listener = RotationListener(self, angle)
         self.analyser.registerListener(listener)
 
 
@@ -150,4 +163,25 @@ class HardwareExecutor(HardwareExecutorModel):
 
     def __init__(self):
         super().__init__()
+        pass
+
+    def readImage(self) -> np.ndarray:
+        pass
+
+    def readGyro(self) -> [float, float, float]:
+        pass
+
+    def readSonarData(self):
+        pass
+
+    def setSpeed(self, speed) -> None:
+        pass
+
+    def setRightSpeed(self, speed) -> None:
+        pass
+
+    def setLeftSpeed(self, speed) -> None:
+        pass
+
+    def rotate(self, angle) -> None:
         pass

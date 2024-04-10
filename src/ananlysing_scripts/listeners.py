@@ -1,23 +1,43 @@
+import time
+import numpy as np
+
+
+class IterationData:
+    cameraImage: np.ndarray
+
+    gyroData: [float, float, float]
+
+    sonarData = None
+
+    arucoResult = None
+
+    isRotating: bool
+
+
 class StepListener:
 
-    def onStep(self):
+    def onStep(self, iterationData: IterationData):
         pass
 
 
 class RotationListener(StepListener):
     currentRotatedAngle = 0
+    measuredTime = time.time()
 
     def __init__(self, executor, angle):
         self.executor = executor
         self.angle = angle
 
-    def onStep(self):
-        current = self.executor.readGyro()[2]
+    def onStep(self, iterationData: IterationData):
+        current = iterationData.gyroData[2]
 
-        self.currentRotatedAngle += current
+        currentTime = time.time()
+
+        self.currentRotatedAngle += current * (currentTime - self.measuredTime)
+        self.measuredTime = currentTime
         print(f'RotationAngle = {self.currentRotatedAngle}')
 
-        if self.currentRotatedAngle > self.angle:
+        if abs(self.currentRotatedAngle) > abs(self.angle):
             self.currentRotatedAngle = 0
             self.executor.isRotating = False
 

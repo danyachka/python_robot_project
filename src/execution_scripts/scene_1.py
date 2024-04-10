@@ -37,24 +37,19 @@ def main(sim_client_id):
 
     # main loop
     while True:
-        simTime += frame_delay
-        print(f'\n\nSimulation time = {simTime}')
-        errorCode, signalValue = sim.simxGetIntegerSignal(clientId, "simulationStopped", sim.simx_opmode_blocking)
-        if errorCode == sim.simx_return_ok and signalValue == 1:
-            print("Simulation stopped")
-            onDestroy()
-            break
-
-        start_time = time.time()
+        iterationStartTime = time.time()
 
         analyser.onIteration()
 
-        if abs(simTime - timeAt) < 0.0001 and not isRotated:
+        if not isRotated:
             isRotated = True
             executor.rotate(360)
 
         # waite util next tick
-        elapsed_time = time.time() - start_time
-        if elapsed_time < frame_delay:
-            print(f'Sleeping for {frame_delay - elapsed_time}s')
-            time.sleep(frame_delay - elapsed_time)
+        # elapsed_time = time.time() - start_time
+        # if elapsed_time < frame_delay:
+        #     print(f'Sleeping for {frame_delay - elapsed_time}s')
+        #     time.sleep(frame_delay - elapsed_time)
+
+        iterationTime = time.time() - iterationStartTime
+        print(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n')
