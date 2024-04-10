@@ -1,6 +1,8 @@
 import numpy as np
 import sim
 import cv2 as cv
+
+from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation_tools import GyroscopeEmulator
 
 
@@ -35,6 +37,7 @@ class HardwareExecutorModel:
 # Should execute commands in simulation
 class HardwareExecutorEmulator(HardwareExecutorModel):
     clientId = 0
+    analyser = None
 
     frontLeftWheel = None
     frontRightWheel = None
@@ -45,6 +48,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
     robot_handle = None
     gyroscopeEmulator: GyroscopeEmulator
+
+    isRotating: bool = False
 
     def __init__(self, clientId):
         super().__init__()
@@ -73,6 +78,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         print(f'Robot handel - {res is sim.simx_return_ok}')
 
         self.gyroscopeEmulator = GyroscopeEmulator()
+
+    def setAnalyser(self, analyser):
+        self.analyser = analyser
 
     def readImage(self) -> np.ndarray:
         res, resolution, image = sim.simxGetVisionSensorImage(
@@ -121,7 +129,20 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         self.setRightSpeed(speed)
 
     def rotate(self, angle):
-        pass
+        self.setLeftSpeed(0)
+
+        self.isRotating = True
+
+        v = 0.6
+        if angle > 0:
+            self.setLeftSpeed(-v)
+            self.setRightSpeed(v)
+        else:
+            self.setLeftSpeed(v)
+            self.setRightSpeed(-v)
+
+        listener = RotationListener(self, angle)
+        self.analyser.registerListener(listener)
 
 
 # Should execute commands with actual hardware

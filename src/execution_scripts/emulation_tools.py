@@ -17,7 +17,7 @@ class GyroscopeEmulator:
         delta_angles = [current_angles[i] - self.prev_angles[i] for i in range(3)]
 
         # Вычисляем угловую скорость как изменение угла на секунду
-        gyro_data = [delta_angle / dt * 180.0 / math.pi for delta_angle in delta_angles]
+        gyro_data = [delta_angle * 180.0 / (dt * math.pi) for delta_angle in delta_angles]
 
         # Обновляем предыдущие углы и временную метку
         self.prev_angles = current_angles
