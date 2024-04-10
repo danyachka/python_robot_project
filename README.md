@@ -1,4 +1,4 @@
-### In main script project:
+### In main script of CoppelliaSim project:
 ```Lua
 require('defaultMainScript')
 

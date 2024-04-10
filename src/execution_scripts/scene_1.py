@@ -5,11 +5,13 @@ import cv2 as cv
 from PIL import Image
 
 import src.ananlysing_scripts.camera_script as camera_script
-from src.ananlysing_scripts.main_script import Analyser
+from src.ananlysing_scripts.analyser import Analyser
 from src.execution_scripts.hardware_executor import HardwareExecutorEmulator
 
 clientId = None
 simTime = 0
+
+simulationTime = 0.5
 
 
 def onDestroy():
@@ -43,7 +45,7 @@ def main(sim_client_id):
 
         if not isRotated:
             isRotated = True
-            executor.rotate(360)
+            #executor.rotate(90)
 
         # waite util next tick
         # elapsed_time = time.time() - start_time
@@ -52,4 +54,5 @@ def main(sim_client_id):
         #     time.sleep(frame_delay - elapsed_time)
 
         iterationTime = time.time() - iterationStartTime
+        iterationTime *= simulationTime
         print(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n')

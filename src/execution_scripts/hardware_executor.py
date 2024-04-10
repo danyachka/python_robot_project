@@ -140,7 +140,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         self.setLeftSpeed(speed)
         self.setRightSpeed(speed)
 
-    def rotate(self, angle):
+    def rotate(self, angle) -> None:
         self.setLeftSpeed(0)
 
         self.isRotating = True

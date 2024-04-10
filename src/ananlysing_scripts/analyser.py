@@ -16,14 +16,14 @@ class Analyser:
 
     def onIteration(self):
         iterationData = IterationData()
-        # image = self.hardwareExecutor.readImage()
-        # iterationData.cameraImage = image
-        # arucoResult: ArucoInfo = onImage(image)
-        #
-        # iterationData.arucoResult = arucoResult
+        image = self.hardwareExecutor.readImage()
+        iterationData.cameraImage = image
+        arucoResult: ArucoInfo = onImage(image)
 
-        # if arucoResult.isFound:
-        #     self.hardwareExecutor.setSpeed(0)
+        iterationData.arucoResult = arucoResult
+
+        if arucoResult.isFound:
+            self.hardwareExecutor.setSpeed(0)
 
         gyroData = self.hardwareExecutor.readGyro()
         print(gyroData)
