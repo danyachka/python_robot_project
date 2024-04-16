@@ -25,7 +25,11 @@ class HardwareExecutorModel:
         pass
 
     @abstractmethod
-    def readSonarData(self):
+    def readSonarData(self) -> list:
+        pass
+
+    @abstractmethod
+    def readInfraScannerData(self):
         pass
 
     @abstractmethod
@@ -60,6 +64,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     robot_handle = None
     gyroscopeEmulator: GyroscopeEmulator
 
+    sonarHandle = None
+
     isRotating: bool = False
 
     def __init__(self, clientId):
@@ -89,6 +95,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         print(f'Robot handel - {res is sim.simx_return_ok}')
         self.gyroscopeEmulator = GyroscopeEmulator()
 
+        res, self.sonarHandle = sim.simxGetObjectHandle(clientId, './sensor', sim.simx_opmode_blocking)
+        print(f'Sonar handel - {res is sim.simx_return_ok}')
+
         self.readGyro()
 
     def setAnalyser(self, analyser):
@@ -115,7 +124,20 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         return self.gyroscopeEmulator.update(euler_angles)
 
-    def readSonarData(self):
+    def readSonarData(self) -> list:
+        err, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_blocking))
+
+        if err == sim.simx_return_ok:
+            if detectionState:
+                return detectedPoints
+            else:
+                return None
+        else:
+            print("Error reading proximity sensor")
+            return None
+
+    def readInfraScannerData(self):
         pass
 
     def setRightSpeed(self, speed) -> None:
@@ -171,7 +193,10 @@ class HardwareExecutor(HardwareExecutorModel):
     def readGyro(self) -> [float, float, float]:
         pass
 
-    def readSonarData(self):
+    def readSonarData(self) -> list:
+        pass
+
+    def readInfraScannerData(self):
         pass
 
     def setSpeed(self, speed) -> None:

@@ -11,11 +11,17 @@ class Analyser:
     hardwareExecutor: HardwareExecutorModel
     __listeners: [StepListener] = []
 
+    previousData: IterationData = IterationData()
+
     def __init__(self, executor):
         self.hardwareExecutor = executor
 
     def onIteration(self):
         iterationData = IterationData()
+
+        iterationData.gyroData = self.hardwareExecutor.readGyro()
+        print(f"Gyro data = {iterationData.gyroData}")
+
         image = self.hardwareExecutor.readImage()
         iterationData.cameraImage = image
         arucoResult: ArucoInfo = onImage(image)
@@ -25,12 +31,12 @@ class Analyser:
         if arucoResult.isFound:
             self.hardwareExecutor.setSpeed(0)
 
-        gyroData = self.hardwareExecutor.readGyro()
-        print(gyroData)
+        iterationData.sonarData = self.hardwareExecutor.readSonarData()
+        print(f"Sonar read points = {iterationData.sonarData}")
 
-        iterationData.gyroData = gyroData
+        self.__notifyListeners(iterationData, self.previousData)
 
-        self.__notifyListeners(iterationData)
+        self.previousData = iterationData
 
     def registerListener(self, listener):
         self.__listeners.append(listener)
@@ -38,6 +44,6 @@ class Analyser:
     def removeListener(self, listener):
         self.__listeners.remove(listener)
 
-    def __notifyListeners(self, iterationData: IterationData):
+    def __notifyListeners(self, iterationData: IterationData, previousData: IterationData):
         for listener in self.__listeners:
-            listener.onStep(iterationData)
+            listener.onStep(iterationData, previousData)

@@ -25,8 +25,8 @@ def onImage(image: np.ndarray) -> ArucoInfo:
     #     aruco.drawDetectedMarkers(image, corners, ids)
     #     print("Detected ArUco marker IDs:", ids.flatten())
 
-    # cv.imshow("Camera image", image)
-    # cv.waitKey(1)
+    cv.imshow("Camera image", image)
+    cv.waitKey(1)
 
     print(f'Image\'s been processed')
 
