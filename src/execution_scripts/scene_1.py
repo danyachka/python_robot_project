@@ -8,10 +8,10 @@ import src.ananlysing_scripts.camera_script as camera_script
 from src.ananlysing_scripts.analyser import Analyser
 from src.execution_scripts.hardware_executor import HardwareExecutorEmulator
 
+from src.logger import logRated, log, setStep
+
 clientId = None
 simTime = 0
-
-simulationTime = 0.5
 
 
 def onDestroy():
@@ -54,5 +54,5 @@ def main(sim_client_id):
         #     time.sleep(frame_delay - elapsed_time)
 
         iterationTime = time.time() - iterationStartTime
-        iterationTime *= simulationTime
-        print(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n')
+        logRated(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n', "Scene")
+        setStep()

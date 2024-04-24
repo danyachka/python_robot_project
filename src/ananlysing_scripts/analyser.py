@@ -5,6 +5,10 @@ from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import onImage, ArucoInfo
 
+from src.logger import logRated, log
+
+tag = "Iteration"
+
 
 class Analyser:
 
@@ -20,7 +24,7 @@ class Analyser:
         iterationData = IterationData()
 
         iterationData.gyroData = self.hardwareExecutor.readGyro()
-        print(f"Gyro data = {iterationData.gyroData}")
+        logRated(f"Gyro data = {iterationData.gyroData}", tag)
 
         image = self.hardwareExecutor.readImage()
         iterationData.cameraImage = image
@@ -32,7 +36,7 @@ class Analyser:
             self.hardwareExecutor.setSpeed(0)
 
         iterationData.sonarData = self.hardwareExecutor.readSonarData()
-        print(f"Sonar read points = {iterationData.sonarData}")
+        logRated(f"Sonar read points = {iterationData.sonarData}", tag)
 
         self.__notifyListeners(iterationData, self.previousData)
 

@@ -1,3 +1,5 @@
+import time
+
 import numpy as np
 import sim
 import cv2 as cv
@@ -6,6 +8,9 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation_tools import GyroscopeEmulator
+from src.logger import logRated, log
+
+tag = "HardwareExecutor"
 
 
 # How to create interfaces (abstract classes)?
@@ -74,29 +79,30 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         res, self.frontLeftWheel = sim.simxGetObjectHandle(
             clientId, './front_left_wheel', sim.simx_opmode_oneshot_wait)
-        print(f'frontLeftWheel handel - {res is sim.simx_return_ok}')
+        log(f'frontLeftWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.frontRightWheel = sim.simxGetObjectHandle(
             clientId, './front_right_wheel', sim.simx_opmode_oneshot_wait)
-        print(f'frontRightWheel handel - {res is sim.simx_return_ok}')
+        log(f'frontRightWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backLeftWheel = sim.simxGetObjectHandle(
             clientId, './back_right_wheel', sim.simx_opmode_oneshot_wait)
-        print(f'backLeftWheel handel - {res is sim.simx_return_ok}')
+        log(f'backLeftWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backRightWheel = sim.simxGetObjectHandle(
             clientId, './back_left_wheel', sim.simx_opmode_oneshot_wait)
-        print(f'backRightWheel handel - {res is sim.simx_return_ok}')
+        log(f'backRightWheel handel - {res is sim.simx_return_ok}', tag)
 
-        res, self.camera_handle = sim.simxGetObjectHandle(clientId, './camera', sim.simx_opmode_oneshot_wait)
-        print(f'Camera handel - {res is sim.simx_return_ok}')
+        res, self.camera_handle = sim.simxGetObjectHandle(clientId, '/robot/camera', sim.simx_opmode_oneshot_wait)
+        res_stream, resolution, image = sim.simxGetVisionSensorImage(self.clientId, self.camera_handle, 0, sim.simx_opmode_streaming)
+        log(f'Camera handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
-        res, self.robot_handle = sim.simxGetObjectHandle(clientId, './robot', sim.simx_opmode_blocking)
-        print(f'Robot handel - {res is sim.simx_return_ok}')
+        res, self.robot_handle = sim.simxGetObjectHandle(clientId, '/robot', sim.simx_opmode_oneshot_wait)
+        log(f'Robot handel - {res is sim.simx_return_ok}', tag)
         self.gyroscopeEmulator = GyroscopeEmulator()
 
-        res, self.sonarHandle = sim.simxGetObjectHandle(clientId, './sensor', sim.simx_opmode_blocking)
-        print(f'Sonar handel - {res is sim.simx_return_ok}')
+        res, self.sonarHandle = sim.simxGetObjectHandle(clientId, '/robot/sensor', sim.simx_opmode_oneshot_wait)
+        log(f'Sonar handel - {res is sim.simx_return_ok}', tag)
 
         self.readGyro()
 
@@ -105,17 +111,25 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
     def readImage(self) -> np.ndarray:
         res, resolution, image = sim.simxGetVisionSensorImage(
-            self.clientId, self.camera_handle, 0, sim.simx_opmode_blocking)
+            self.clientId, self.camera_handle, 0, sim.simx_opmode_buffer)
 
         if res == sim.simx_return_ok:
             # Convert the image to a format usable by OpenCV
-            image = np.array(image, dtype=np.uint8)
-            image = image.reshape([resolution[1], resolution[0], 3])
+            time_0 = time.time_ns() / 1_000_000
+
+            image = np.asarray(image)
+            # image = np.array(image, dtype=np.uint8)
+
+            time_1 = time.time_ns() / 1_000_000
+            image = image.astype(np.uint8).reshape([resolution[1], resolution[0], 3])
+            time_2 = time.time_ns() / 1_000_000
             image = np.flip(image, 0)
             image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+            time_3 = time.time_ns() / 1_000_000
+            logRated(f"{time_1 - time_0}, {time_2 - time_1}, {time_3 - time_2}", tag)
             return image
         else:
-            print("Failed to capture image.")
+            log("Failed to capture image.", tag)
             return None
 
     def readGyro(self) -> [float, float, float]:
@@ -134,7 +148,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             else:
                 return None
         else:
-            print("Error reading proximity sensor")
+            log("Error reading proximity sensor")
             return None
 
     def readInfraScannerData(self):
@@ -143,20 +157,20 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     def setRightSpeed(self, speed) -> None:
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.frontRightWheel, -speed, sim.simx_opmode_oneshot_wait)
-        print(f'frontRightWheel: {error is sim.simx_return_ok}')
+        logRated(f'frontRightWheel: {error is sim.simx_return_ok}', "wheel")
 
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.backRightWheel, -speed, sim.simx_opmode_oneshot_wait)
-        print(f'backRightWheel: {error is sim.simx_return_ok}')
+        logRated(f'backRightWheel: {error is sim.simx_return_ok}', "wheel")
 
     def setLeftSpeed(self, speed) -> None:
         error = (sim.simxSetJointTargetVelocity
                  (self.clientId, self.frontLeftWheel, speed, sim.simx_opmode_oneshot_wait))
-        print(f'frontLeftWheel: {error is sim.simx_return_ok}')
+        logRated(f'frontLeftWheel: {error is sim.simx_return_ok}', "wheel")
 
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.backLeftWheel, speed, sim.simx_opmode_oneshot_wait)
-        print(f'backLeftWheel: {error is sim.simx_return_ok}')
+        logRated(f'backLeftWheel: {error is sim.simx_return_ok}', "wheel")
 
     def setSpeed(self, speed) -> None:
         self.setLeftSpeed(speed)

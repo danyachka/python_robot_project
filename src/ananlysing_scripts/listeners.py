@@ -1,6 +1,8 @@
 import time
 import numpy as np
 
+from src.logger import logRated
+
 
 class IterationData:
     iterationStartTime: float
@@ -38,7 +40,7 @@ class RotationListener(StepListener):
         iterationDuration = iterationData.iterationStartTime - previousData.iterationStartTime
         self.currentRotatedAngle += current * iterationDuration
 
-        print(f'RotationAngle = {self.currentRotatedAngle}')
+        logRated(f'RotationAngle = {self.currentRotatedAngle}', "RotationListener")
 
         if abs(self.currentRotatedAngle) > abs(self.angle):
             self.currentRotatedAngle = 0
