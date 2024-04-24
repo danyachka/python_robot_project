@@ -12,6 +12,8 @@ class GyroscopeEmulator:
         current_time = time.time()
         # Вычисляем разницу времени с предыдущим обновлением
         dt = current_time - self.timestamp
+        if dt == 0:
+            return [0, 0, 0]
 
         # Вычисляем изменение углов поворота
         delta_angles = [current_angles[i] - self.prev_angles[i] for i in range(3)]

@@ -1,19 +1,13 @@
-
-iterationCount = 0
-
-printRate = 20
-
-
-def logRated(text, tag=""):
-
-    if iterationCount % printRate == 0:
-        log(text, tag)
+from colorama import Fore
 
 
 def log(text, tag=""):
     print(f"{tag:20}: {text}")
 
 
-def setStep():
-    global iterationCount
-    iterationCount += 1
+def logBlue(text, tag=""):
+    print(f"{tag:20}: {Fore.BLUE}{text}{Fore.RESET}")
+
+
+def logError(text, tag=""):
+    print(f"{tag:20}: {Fore.YELLOW}{text}{Fore.RESET}")

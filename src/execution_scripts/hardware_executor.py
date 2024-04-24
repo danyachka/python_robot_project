@@ -8,7 +8,7 @@ from abc import ABCMeta, abstractmethod, abstractproperty
 
 from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation_tools import GyroscopeEmulator
-from src.logger import logRated, log
+from src.logger import log, logError
 
 tag = "HardwareExecutor"
 
@@ -94,15 +94,20 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         log(f'backRightWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.camera_handle = sim.simxGetObjectHandle(clientId, '/robot/camera', sim.simx_opmode_oneshot_wait)
-        res_stream, resolution, image = sim.simxGetVisionSensorImage(self.clientId, self.camera_handle, 0, sim.simx_opmode_streaming)
+        res_stream, resolution, image = sim.simxGetVisionSensorImage(
+            self.clientId, self.camera_handle, 0, sim.simx_opmode_streaming)
         log(f'Camera handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
         res, self.robot_handle = sim.simxGetObjectHandle(clientId, '/robot', sim.simx_opmode_oneshot_wait)
-        log(f'Robot handel - {res is sim.simx_return_ok}', tag)
+        res_stream, euler_angles = sim.simxGetObjectOrientation(
+            self.clientId, self.robot_handle, -1, sim.simx_opmode_streaming)
         self.gyroscopeEmulator = GyroscopeEmulator()
+        log(f'Robot handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
         res, self.sonarHandle = sim.simxGetObjectHandle(clientId, '/robot/sensor', sim.simx_opmode_oneshot_wait)
-        log(f'Sonar handel - {res is sim.simx_return_ok}', tag)
+        res_stream, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_streaming))
+        log(f'Sonar handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
         self.readGyro()
 
@@ -126,21 +131,21 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             image = np.flip(image, 0)
             image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
             time_3 = time.time_ns() / 1_000_000
-            logRated(f"{time_1 - time_0}, {time_2 - time_1}, {time_3 - time_2}", tag)
+            log(f"Image preparing - {time_1 - time_0}, {time_2 - time_1}, {time_3 - time_2}", tag)
             return image
         else:
-            log("Failed to capture image.", tag)
+            logError("Failed to capture image", tag)
             return None
 
     def readGyro(self) -> [float, float, float]:
         res, euler_angles = (
-            sim.simxGetObjectOrientation(self.clientId, self.robot_handle, -1, sim.simx_opmode_blocking))
+            sim.simxGetObjectOrientation(self.clientId, self.robot_handle, -1, sim.simx_opmode_buffer))
 
         return self.gyroscopeEmulator.update(euler_angles)
 
     def readSonarData(self) -> list:
         err, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_blocking))
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_buffer))
 
         if err == sim.simx_return_ok:
             if detectionState:
@@ -148,7 +153,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             else:
                 return None
         else:
-            log("Error reading proximity sensor")
+            logError("Error reading proximity sensor")
             return None
 
     def readInfraScannerData(self):
@@ -157,20 +162,20 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     def setRightSpeed(self, speed) -> None:
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.frontRightWheel, -speed, sim.simx_opmode_oneshot_wait)
-        logRated(f'frontRightWheel: {error is sim.simx_return_ok}', "wheel")
+        log(f'frontRightWheel: {error is sim.simx_return_ok}', tag)
 
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.backRightWheel, -speed, sim.simx_opmode_oneshot_wait)
-        logRated(f'backRightWheel: {error is sim.simx_return_ok}', "wheel")
+        log(f'backRightWheel: {error is sim.simx_return_ok}', tag)
 
     def setLeftSpeed(self, speed) -> None:
         error = (sim.simxSetJointTargetVelocity
                  (self.clientId, self.frontLeftWheel, speed, sim.simx_opmode_oneshot_wait))
-        logRated(f'frontLeftWheel: {error is sim.simx_return_ok}', "wheel")
+        log(f'frontLeftWheel: {error is sim.simx_return_ok}', tag)
 
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.backLeftWheel, speed, sim.simx_opmode_oneshot_wait)
-        logRated(f'backLeftWheel: {error is sim.simx_return_ok}', "wheel")
+        log(f'backLeftWheel: {error is sim.simx_return_ok}', tag)
 
     def setSpeed(self, speed) -> None:
         self.setLeftSpeed(speed)

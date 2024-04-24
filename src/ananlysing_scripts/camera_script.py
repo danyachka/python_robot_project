@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv
 import cv2.aruco as aruco
 
-from src.logger import logRated
+from src.logger import log
 
 tag = "Camera"
 
@@ -32,6 +32,6 @@ def onImage(image: np.ndarray) -> ArucoInfo:
     cv.imshow("Camera image", image)
     cv.waitKey(1)
 
-    logRated(f'Image\'s been processed', tag)
+    log(f'Image\'s been processed', tag)
 
     return ArucoInfo(0, False)
