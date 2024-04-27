@@ -17,6 +17,7 @@ class Analyser:
     __listeners: [StepListener] = []
 
     previousData: IterationData = IterationData()
+    iterationData: IterationData = IterationData()
 
     arucoDetector: ArucoDetector
 
@@ -26,23 +27,23 @@ class Analyser:
         self.arucoDetector = ArucoDetector()
 
     def onIteration(self):
-        iterationData = IterationData()
+        self.iterationData = IterationData()
 
-        iterationData.gyroData = self.hardwareExecutor.readGyro()
-        log(f"Gyro data = {iterationData.gyroData}", tag)
+        self.iterationData.gyroData = self.hardwareExecutor.readGyro()
+        log(f"Gyro data = {self.iterationData.gyroData}", tag)
 
-        iterationData.cameraImage = self.hardwareExecutor.readImage()
-        iterationData.arucoResult = self.arucoDetector.onImage(iterationData.cameraImage)
+        self.iterationData.cameraImage = self.hardwareExecutor.readImage()
+        self.iterationData.arucoResult = self.arucoDetector.onImage(self.iterationData.cameraImage)
 
-        if iterationData.arucoResult.isFound:
+        if self.iterationData.arucoResult.isFound:
             self.hardwareExecutor.setSpeed(0)
 
-        iterationData.sonarData = self.hardwareExecutor.readSonarData()
-        log(f"Sonar read points = {iterationData.sonarData}", tag)
+        self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
+        log(f"Sonar read points = {self.iterationData.sonarData}", tag)
 
-        self.__notifyListeners(iterationData, self.previousData)
+        self.__notifyListeners(self.iterationData, self.previousData)
 
-        self.previousData = iterationData
+        self.previousData = self.iterationData
 
     def registerListener(self, listener):
         self.__listeners.append(listener)
