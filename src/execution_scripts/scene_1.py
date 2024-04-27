@@ -43,9 +43,9 @@ def main(sim_client_id):
 
         analyser.onIteration()
 
-        if not isRotated:
-            isRotated = True
-            executor.rotate(90)
+        # if not isRotated:
+        #     isRotated = True
+        #     executor.rotate(90)
 
         # waite util next tick
         elapsed_time = time.time() - iterationStartTime

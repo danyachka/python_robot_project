@@ -1,9 +1,10 @@
-from PIL import Image
+from pathlib import Path
+
 import numpy as np
 import cv2 as cv
-import cv2.aruco as aruco
+from cv2 import aruco
 
-from src.logger import log
+from src.logger import log, logError
 
 tag = "Camera"
 
@@ -15,23 +16,48 @@ class ArucoInfo:
         self.isFound = isFound
 
 
-def onImage(image: np.ndarray) -> ArucoInfo:
-    if image is None:
+class ArucoDetector:
+    detector: aruco.ArucoDetector
+
+    def __init__(self):
+        arucoDict = aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+        arucoParams = aruco.DetectorParameters()
+        self.detector = aruco.ArucoDetector(arucoDict, arucoParams)
+
+    def onImage(self, image: np.ndarray) -> ArucoInfo:
+        if image is None:
+            return ArucoInfo(0, False)
+
+        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
+        corners, ids, rejected = self.detector.detectMarkers(gray)
+
+        image = aruco.drawDetectedMarkers(image, corners, ids)
+
+        # rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(corners, 0.05, cameraMatrix, distCoeffs)
+        # if ids is not None:
+        #     for i in range(ids.size):
+        #         aruco.drawAxis(frame, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], 0.1)
+
+        if len(corners) > 0:
+            aruco.drawDetectedMarkers(image, corners, ids)
+            log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
+        else:
+            logError("No aruco detected", tag)
+
+        cv.imshow("Camera image", image)
+        cv.waitKey(1)
+
+        log(f'Image\'s been processed', tag)
+
         return ArucoInfo(0, False)
 
-    # arucoDict = aruco.Dictionary_get(aruco.DICT_6X6_250)
-    # arucoParams = aruco.DetectorParameters_create()
-    # (corners, ids, rejected) = aruco.detectMarkers(image, arucoDict, parameters=arucoParams)
-    #
-    # # Проверяем, был ли обнаружен хотя бы один ArUco маркер
-    # if len(corners) > 0:
-    #     # Наложение на изображение квадратов вокруг обнаруженных маркеров
-    #     aruco.drawDetectedMarkers(image, corners, ids)
-    #     print("Detected ArUco marker IDs:", ids.flatten())
 
-    cv.imshow("Camera image", image)
-    cv.waitKey(1)
+if __name__ == '__main__':
+    path = Path(__file__).parent.parent.parent.joinpath("data/aruco.png")
 
-    log(f'Image\'s been processed', tag)
+    img = cv.imread(str(path))
 
-    return ArucoInfo(0, False)
+    arucoDetector = ArucoDetector()
+
+    arucoDetector.onImage(img)

@@ -1,24 +1,6 @@
-import time
-import numpy as np
+from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo
 
 from src.logger import log
-
-
-class IterationData:
-    iterationStartTime: float
-
-    cameraImage: np.ndarray
-
-    gyroData: [float, float, float]
-
-    sonarData = []
-
-    arucoResult = None
-
-    isRotating: bool
-
-    def __init__(self):
-        self.iterationStartTime = time.time()
 
 
 class StepListener:

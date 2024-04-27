@@ -1,9 +1,10 @@
 import numpy as np
 
-from src.ananlysing_scripts.listeners import StepListener, IterationData
+from src.ananlysing_scripts.listeners import StepListener
+from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
-from src.ananlysing_scripts.camera_script import onImage, ArucoInfo
+from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo
 
 from src.logger import log, log
 
@@ -17,8 +18,12 @@ class Analyser:
 
     previousData: IterationData = IterationData()
 
+    arucoDetector: ArucoDetector
+
     def __init__(self, executor):
         self.hardwareExecutor = executor
+
+        self.arucoDetector = ArucoDetector()
 
     def onIteration(self):
         iterationData = IterationData()
@@ -27,7 +32,7 @@ class Analyser:
         log(f"Gyro data = {iterationData.gyroData}", tag)
 
         iterationData.cameraImage = self.hardwareExecutor.readImage()
-        iterationData.arucoResult = onImage(iterationData.cameraImage)
+        iterationData.arucoResult = self.arucoDetector.onImage(iterationData.cameraImage)
 
         if iterationData.arucoResult.isFound:
             self.hardwareExecutor.setSpeed(0)

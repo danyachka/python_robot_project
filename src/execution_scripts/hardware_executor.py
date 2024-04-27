@@ -1,3 +1,4 @@
+import math
 import time
 
 import numpy as np
@@ -6,6 +7,7 @@ import cv2 as cv
 
 from abc import ABCMeta, abstractmethod, abstractproperty
 
+from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
@@ -30,7 +32,7 @@ class HardwareExecutorModel:
         pass
 
     @abstractmethod
-    def readSonarData(self) -> list:
+    def readSonarData(self) -> SonarInfo:
         pass
 
     @abstractmethod
@@ -69,7 +71,10 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     robot_handle = None
     gyroscopeEmulator: GyroscopeEmulator
 
-    sonarHandle = None
+    sonarHandle_f = None
+    sonarHandle_r = None
+    sonarHandle_b = None
+    sonarHandle_l = None
 
     isRotating: bool = False
 
@@ -104,10 +109,26 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         self.gyroscopeEmulator = GyroscopeEmulator()
         log(f'Robot handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
-        res, self.sonarHandle = sim.simxGetObjectHandle(clientId, '/robot/sensor', sim.simx_opmode_oneshot_wait)
+        # Sonars
+        res, self.sonarHandle_f = sim.simxGetObjectHandle(clientId, '/robot/sensor_f', sim.simx_opmode_oneshot_wait)
         res_stream, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_streaming))
-        log(f'Sonar handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_f, sim.simx_opmode_streaming))
+        log(f'Sonar_f handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
+
+        res, self.sonarHandle_r = sim.simxGetObjectHandle(clientId, '/robot/sensor_r', sim.simx_opmode_oneshot_wait)
+        res_stream, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_r, sim.simx_opmode_streaming))
+        log(f'Sonar_r handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
+
+        res, self.sonarHandle_b = sim.simxGetObjectHandle(clientId, '/robot/sensor_b', sim.simx_opmode_oneshot_wait)
+        res_stream, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_b, sim.simx_opmode_streaming))
+        log(f'Sonar_b handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
+
+        res, self.sonarHandle_l = sim.simxGetObjectHandle(clientId, '/robot/sensor_l', sim.simx_opmode_oneshot_wait)
+        res_stream, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_l, sim.simx_opmode_streaming))
+        log(f'Sonar_l handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
         self.readGyro()
 
@@ -143,18 +164,51 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         return self.gyroscopeEmulator.update(euler_angles)
 
-    def readSonarData(self) -> list:
-        err, detectionState, detectedPoints, detectedObjectHandle, detectedSurfaceNormalVector = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle, sim.simx_opmode_buffer))
+    def readSonarData(self) -> SonarInfo:
+        err1, detectionState, front, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_f, sim.simx_opmode_buffer))
+        err2, detectionState, right, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_r, sim.simx_opmode_buffer))
+        err3, detectionState, back, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_b, sim.simx_opmode_buffer))
+        err4, detectionState, left, detectedObjectHandle, detectedSurfaceNormalVector = (
+            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_l, sim.simx_opmode_buffer))
 
-        if err == sim.simx_return_ok:
-            if detectionState:
-                return detectedPoints
-            else:
-                return None
+        if err1 != sim.simx_return_ok:
+            logError("Error reading proximity sensor (front)", tag)
+            front = -1
         else:
-            logError("Error reading proximity sensor")
-            return None
+            front = math.sqrt(front[0]**2 + front[1]**2 + front[2]**2)
+            if front < 10**-16:
+                front = -1
+
+        if err2 != sim.simx_return_ok:
+            logError("Error reading proximity sensor (right)", tag)
+            right = -1
+        else:
+            right = math.sqrt(right[0]**2 + right[1]**2 + right[2]**2)
+            if right < 10**-16:
+                right = -1
+
+        if err3 != sim.simx_return_ok:
+            logError("Error reading proximity sensor (back)", tag)
+            back = -1
+        else:
+            back = math.sqrt(back[0]**2 + back[1]**2 + back[2]**2)
+            if back < 10**-16:
+                back = -1
+
+        if err4 != sim.simx_return_ok:
+            logError("Error reading proximity sensor (left)", tag)
+            left = -1
+        else:
+            left = math.sqrt(left[0]**2 + left[1]**2 + left[2]**2)
+            if left < 10**-16:
+                left = -1
+
+        sonarData = SonarInfo(front, right, back, left)
+
+        return sonarData
 
     def readInfraScannerData(self):
         pass
@@ -212,7 +266,7 @@ class HardwareExecutor(HardwareExecutorModel):
     def readGyro(self) -> [float, float, float]:
         pass
 
-    def readSonarData(self) -> list:
+    def readSonarData(self) -> SonarInfo:
         pass
 
     def readInfraScannerData(self):
