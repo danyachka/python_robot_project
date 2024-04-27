@@ -260,7 +260,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             self.setLeftSpeed(v)
             self.setRightSpeed(-v)
 
-        self.analyser.registerListener(listener)
+        self.analyser.registerGyroListener(listener)
 
 
 # Should execute commands with actual hardware

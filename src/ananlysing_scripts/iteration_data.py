@@ -21,15 +21,15 @@ class SonarInfo:
 class IterationData:
     iterationStartTime: float
 
-    cameraImage: np.ndarray
+    cameraImage: np.ndarray = None
 
-    gyroData: [float, float, float]
+    gyroData: [float, float, float] = [0, 0, 0]
 
-    sonarData: SonarInfo
+    sonarData: SonarInfo = SonarInfo(-1, -1, -1, -1)
 
     arucoResult = None
 
-    isRotating: bool
+    isRotating: bool = False
 
     def __init__(self):
         self.iterationStartTime = time.time()

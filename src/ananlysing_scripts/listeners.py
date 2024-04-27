@@ -19,7 +19,7 @@ class RotationListener(StepListener):
     def onStep(self, iterationData: IterationData, previousData: IterationData):
         current = iterationData.gyroData[2]
 
-        iterationDuration = iterationData.iterationStartTime - previousData.iterationStartTime
+        iterationDuration = 0.01
         self.currentRotatedAngle += current * iterationDuration
 
         log(f'RotationAngle = {self.currentRotatedAngle}', "RotationListener")
@@ -31,4 +31,4 @@ class RotationListener(StepListener):
             self.executor.setLeftSpeed(0)
             self.executor.setRightSpeed(0)
 
-            self.executor.analyser.removeListener(self)
+            self.executor.analyser.removeGyroListener(self)

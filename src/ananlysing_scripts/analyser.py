@@ -1,12 +1,10 @@
-import numpy as np
-
 from src.ananlysing_scripts.listeners import StepListener
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo
 
-from src.logger import log, log
+from src.logger import log
 
 tag = "Iteration"
 
@@ -21,6 +19,10 @@ class Analyser:
 
     arucoDetector: ArucoDetector
 
+    absoluteAngle: float = 0
+
+    currentDirectionAngle: float = 0
+
     def __init__(self, executor):
         self.hardwareExecutor = executor
 
@@ -28,9 +30,6 @@ class Analyser:
 
     def onIteration(self):
         self.iterationData = IterationData()
-
-        self.iterationData.gyroData = self.hardwareExecutor.readGyro()
-        log(f"Gyro data = {self.iterationData.gyroData}", tag)
 
         self.iterationData.cameraImage = self.hardwareExecutor.readImage()
         self.iterationData.arucoResult = self.arucoDetector.onImage(self.iterationData.cameraImage)
@@ -41,16 +40,20 @@ class Analyser:
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
         log(f"Sonar read points = {self.iterationData.sonarData}", tag)
 
-        self.__notifyListeners(self.iterationData, self.previousData)
-
         self.previousData = self.iterationData
 
-    def registerListener(self, listener):
+    def onGyroIteration(self):
+        self.iterationData.gyroData = self.hardwareExecutor.readGyro()
+        log(f"Gyro data = {self.iterationData.gyroData}", tag)
+
+        self.__notifyGyroListeners(self.iterationData, self.previousData)
+
+    def registerGyroListener(self, listener):
         self.__listeners.append(listener)
 
-    def removeListener(self, listener):
+    def removeGyroListener(self, listener):
         self.__listeners.remove(listener)
 
-    def __notifyListeners(self, iterationData: IterationData, previousData: IterationData):
+    def __notifyGyroListeners(self, iterationData: IterationData, previousData: IterationData):
         for listener in self.__listeners:
             listener.onStep(iterationData, previousData)

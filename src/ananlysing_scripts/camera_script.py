@@ -28,9 +28,9 @@ class ArucoDetector:
         if image is None:
             return ArucoInfo(0, False)
 
-        gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+        # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
-        corners, ids, rejected = self.detector.detectMarkers(gray)
+        corners, ids, rejected = self.detector.detectMarkers(image)
 
         image = aruco.drawDetectedMarkers(image, corners, ids)
 
