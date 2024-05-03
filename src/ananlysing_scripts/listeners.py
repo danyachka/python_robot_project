@@ -1,4 +1,4 @@
-from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo
+from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 
 from src.logger import log
 
@@ -9,26 +9,30 @@ class StepListener:
         pass
 
 
-class RotationListener(StepListener):
-    currentRotatedAngle = 0
+class GyroListener:
 
-    def __init__(self, executor, angle):
+    def onStep(self, gyroData, absoluteAngle, directionAngle, dt):
+        pass
+
+
+class RotationListener(GyroListener):
+
+    def __init__(self, executor, angleToRotate):
         self.executor = executor
-        self.angle = angle
+        self.angleToRotate = angleToRotate
 
-    def onStep(self, iterationData: IterationData, previousData: IterationData):
-        current = iterationData.gyroData[2]
+        log(f"Angle to rotate = {angleToRotate}", "RotationListener")
 
-        iterationDuration = 0.01
-        self.currentRotatedAngle += current * iterationDuration
+    def onStep(self, gyroData, absoluteAngle, directionAngle, dt):
 
-        log(f'RotationAngle = {self.currentRotatedAngle}', "RotationListener")
+        log(f'RotationAngle = {absoluteAngle}, subtraction = {abs(self.angleToRotate - absoluteAngle)}'
+            , "RotationListener")
 
-        if abs(self.currentRotatedAngle) > abs(self.angle):
-            self.currentRotatedAngle = 0
+        if abs(self.angleToRotate - absoluteAngle) < 1.5:
             self.executor.isRotating = False
 
             self.executor.setLeftSpeed(0)
             self.executor.setRightSpeed(0)
 
             self.executor.analyser.removeGyroListener(self)
+            self.executor.analyser.onRotationEnd()

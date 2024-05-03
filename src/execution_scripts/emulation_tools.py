@@ -1,6 +1,9 @@
 import math
 import time
 
+from src import constants
+from src.constants import gyro_dt
+
 
 class GyroscopeEmulator:
     def __init__(self):
@@ -9,7 +12,10 @@ class GyroscopeEmulator:
 
     def update(self, current_angles):
         current_time = time.time()
-        dt = 0.01
+        # dt = current_time - self.timestamp
+        dt = constants.gyro_dt
+        if dt == 0:
+            return [0, 0, 0]
 
         delta_angles = [current_angles[i] - self.prev_angles[i] for i in range(3)]
 

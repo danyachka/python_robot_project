@@ -52,7 +52,7 @@ class HardwareExecutorModel:
         pass
 
     @abstractmethod
-    def rotate(self, angle) -> None:
+    def rotate(self, toRotate, degrees) -> None:
         pass
 
 
@@ -144,7 +144,6 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             self.clientId, self.camera_handle, 0, sim.simx_opmode_buffer)
 
         if res == sim.simx_return_ok:
-            # Convert the image to a format usable by OpenCV
             time_0 = time.time_ns() / 1_000_000
 
             image = np.asarray(image).astype(np.uint8)
@@ -245,15 +244,17 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         self.setLeftSpeed(speed)
         self.setRightSpeed(speed)
 
-    def rotate(self, angle) -> None:
+    def rotate(self, toRotate, degrees) -> None:
+
         self.setLeftSpeed(0)
+        self.setRightSpeed(0)
 
         self.isRotating = True
 
-        listener = RotationListener(self, angle)
+        listener = RotationListener(self, toRotate)
 
-        v = 1
-        if angle > 0:
+        v = 0.5
+        if degrees > 0:
             self.setLeftSpeed(-v)
             self.setRightSpeed(v)
         else:
@@ -291,5 +292,5 @@ class HardwareExecutor(HardwareExecutorModel):
     def setLeftSpeed(self, speed) -> None:
         pass
 
-    def rotate(self, angle) -> None:
+    def rotate(self, toRotate, degrees) -> None:
         pass

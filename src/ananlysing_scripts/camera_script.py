@@ -11,8 +11,11 @@ tag = "Camera"
 
 class ArucoInfo:
 
-    def __init__(self, angle, isFound):
-        self.angle = angle
+    ids: np.ndarray
+    isFound: bool
+
+    def __init__(self, arucoIds, isFound):
+        self.ids = arucoIds
         self.isFound = isFound
 
 
@@ -26,13 +29,11 @@ class ArucoDetector:
 
     def onImage(self, image: np.ndarray) -> ArucoInfo:
         if image is None:
-            return ArucoInfo(0, False)
+            return ArucoInfo([], False)
 
         # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         corners, ids, rejected = self.detector.detectMarkers(image)
-
-        image = aruco.drawDetectedMarkers(image, corners, ids)
 
         # rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(corners, 0.05, cameraMatrix, distCoeffs)
         # if ids is not None:
@@ -40,7 +41,8 @@ class ArucoDetector:
         #         aruco.drawAxis(frame, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], 0.1)
 
         if len(corners) > 0:
-            aruco.drawDetectedMarkers(image, corners, ids)
+            # aruco.drawDetectedMarkers(image, corners, ids)
+            image = aruco.drawDetectedMarkers(image, corners, ids)
             log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
         else:
             logError("No aruco detected", tag)
@@ -50,7 +52,10 @@ class ArucoDetector:
 
         log(f'Image\'s been processed', tag)
 
-        return ArucoInfo(0, False)
+        if len(corners) > 0:
+            return ArucoInfo(ids.flatten(), True)
+        else:
+            return ArucoInfo([], False)
 
 
 if __name__ == '__main__':

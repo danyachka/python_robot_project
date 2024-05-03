@@ -1,5 +1,17 @@
+from enum import Enum
+
 import numpy as np
 import time
+
+
+class State(Enum):
+    STOP = 0
+
+    ROTATING = 1
+
+    MOVING_TO_TARGET = 2
+
+    SCANNING_OBSTACLE = 3
 
 
 class SonarInfo:
@@ -24,6 +36,8 @@ class IterationData:
     cameraImage: np.ndarray = None
 
     gyroData: [float, float, float] = [0, 0, 0]
+
+    rotated: float = 0
 
     sonarData: SonarInfo = SonarInfo(-1, -1, -1, -1)
 
