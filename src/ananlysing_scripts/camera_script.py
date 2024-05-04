@@ -42,7 +42,7 @@ class ArucoDetector:
 
         if len(corners) > 0:
             # aruco.drawDetectedMarkers(image, corners, ids)
-            image = aruco.drawDetectedMarkers(image, corners, ids)
+            aruco.drawDetectedMarkers(image, corners, ids)
             log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
         else:
             logError("No aruco detected", tag)
@@ -56,13 +56,3 @@ class ArucoDetector:
             return ArucoInfo(ids.flatten(), True)
         else:
             return ArucoInfo([], False)
-
-
-if __name__ == '__main__':
-    path = Path(__file__).parent.parent.parent.joinpath("data/aruco.png")
-
-    img = cv.imread(str(path))
-
-    arucoDetector = ArucoDetector()
-
-    arucoDetector.onImage(img)
