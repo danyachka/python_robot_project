@@ -1,6 +1,6 @@
 import sys
 import sim
-import execution_scripts.scene_1 as scene_1
+from execution_scripts.iterator import Iterator
 
 
 sim.simxFinish(-1)  # just in case, close all opened connections
@@ -17,4 +17,5 @@ else:
     sys.exit('Could not connect')
 
 
-scene_1.main(clientID)
+iterator = Iterator(clientID, True)
+iterator.start()

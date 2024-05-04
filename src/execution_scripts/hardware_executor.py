@@ -5,11 +5,11 @@ import numpy as np
 import sim
 import cv2 as cv
 
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners import RotationListener
-from src.execution_scripts.emulation_tools import GyroscopeEmulator
+from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
 
 tag = "HardwareExecutor"
@@ -19,9 +19,16 @@ tag = "HardwareExecutor"
 class HardwareExecutorModel:
     __metaclass__ = ABCMeta
 
+    clientId = 0
+
+    analyser = None
+
     @abstractmethod
-    def __init__(self):
-        pass
+    def __init__(self, clientId):
+        self.clientId = clientId
+
+    def setAnalyser(self, analyser):
+        self.analyser = analyser
 
     @abstractmethod
     def readImage(self) -> np.ndarray:
@@ -58,9 +65,6 @@ class HardwareExecutorModel:
 
 # Should execute commands in simulation
 class HardwareExecutorEmulator(HardwareExecutorModel):
-    clientId = 0
-    analyser = None
-
     frontLeftWheel = None
     frontRightWheel = None
     backLeftWheel = None
@@ -79,8 +83,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     isRotating: bool = False
 
     def __init__(self, clientId):
-        super().__init__()
-        self.clientId = clientId
+        super().__init__(clientId)
 
         res, self.frontLeftWheel = sim.simxGetObjectHandle(
             clientId, './front_left_wheel', sim.simx_opmode_oneshot_wait)
@@ -135,9 +138,6 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
             f'{self.sonarHandle_l}', tag)
 
         self.readGyro()
-
-    def setAnalyser(self, analyser):
-        self.analyser = analyser
 
     def readImage(self) -> np.ndarray:
         res, resolution, image = sim.simxGetVisionSensorImage(
@@ -267,9 +267,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 # Should execute commands with actual hardware
 class HardwareExecutor(HardwareExecutorModel):
 
-    def __init__(self):
-        super().__init__()
-        pass
+    def __init__(self, clientId):
+        super().__init__(clientId)
 
     def readImage(self) -> np.ndarray:
         pass

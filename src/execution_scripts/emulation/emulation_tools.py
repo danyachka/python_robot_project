@@ -2,7 +2,6 @@ import math
 import time
 
 from src import constants
-from src.constants import gyro_dt
 
 
 class GyroscopeEmulator:
