@@ -82,6 +82,12 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
     isRotating: bool = False
 
+    cameraMatrix = [[1.27358341e+03, 0.00000000e+00, 3.00942489e+02],
+                    [0.00000000e+00, 1.26663343e+03, 2.33213114e+02],
+                    [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+
+    distCfs = [[7.43051630e-02, -5.16983657e+00, -1.01402024e-03, -2.80294514e-04, 9.13089594e+01]]
+
     def __init__(self, clientId):
         super().__init__(clientId)
 

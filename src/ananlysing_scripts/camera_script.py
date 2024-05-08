@@ -22,10 +22,16 @@ class ArucoInfo:
 class ArucoDetector:
     detector: aruco.ArucoDetector
 
-    def __init__(self):
+    cameraMatrix = None
+
+    distCfs = None
+
+    def __init__(self, cameraMatrix, distCfs):
         arucoDict = aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
         arucoParams = aruco.DetectorParameters()
         self.detector = aruco.ArucoDetector(arucoDict, arucoParams)
+        self.cameraMatrix = cameraMatrix
+        self.distCfs = distCfs
 
     def onImage(self, image: np.ndarray) -> ArucoInfo:
         if image is None:
@@ -35,15 +41,15 @@ class ArucoDetector:
 
         corners, ids, rejected = self.detector.detectMarkers(image)
 
-        # rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(corners, 0.05, cameraMatrix, distCoeffs)
-        # if ids is not None:
-        #     for i in range(ids.size):
-        #         aruco.drawAxis(frame, cameraMatrix, distCoeffs, rvecs[i], tvecs[i], 0.1)
-
         if len(corners) > 0:
-            # aruco.drawDetectedMarkers(image, corners, ids)
             aruco.drawDetectedMarkers(image, corners, ids)
             log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
+
+            rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(corners, 0.05, self.cameraMatrix, self.distCfs)
+            if ids is not None:
+                for i in range(ids.size):
+                    aruco.drawAxis(image, self.cameraMatrix, self.distCfs, rvecs[i], tvecs[i], 0.1)
+
         else:
             logError("No aruco detected", tag)
 
