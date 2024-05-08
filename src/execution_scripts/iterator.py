@@ -33,7 +33,7 @@ class Iterator:
         self.executor.setAnalyser(self.analyser)
 
     def start(self):
-        gyroThread = Thread(target=self.startGyroIteration, args=[])
+        gyroThread = Thread(target=self.startGyroIteration, args=[], daemon=True)
         gyroThread.start()
         self.startMainIteration()
 

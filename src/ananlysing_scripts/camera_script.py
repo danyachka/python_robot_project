@@ -10,12 +10,14 @@ tag = "Camera"
 
 
 class ArucoInfo:
-
     ids: np.ndarray
     isFound: bool
 
-    def __init__(self, arucoIds, isFound):
+    normals: list
+
+    def __init__(self, arucoIds, normals, isFound):
         self.ids = arucoIds
+        self.normals = normals
         self.isFound = isFound
 
 
@@ -35,20 +37,19 @@ class ArucoDetector:
 
     def onImage(self, image: np.ndarray) -> ArucoInfo:
         if image is None:
-            return ArucoInfo([], False)
+            return ArucoInfo([], [], False)
 
         # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         corners, ids, rejected = self.detector.detectMarkers(image)
 
+        normals = []
         if len(corners) > 0:
             aruco.drawDetectedMarkers(image, corners, ids)
             log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
 
-            rvecs, tvecs, _objPoints = aruco.estimatePoseSingleMarkers(corners, 0.05, self.cameraMatrix, self.distCfs)
-            if ids is not None:
-                for i in range(ids.size):
-                    aruco.drawAxis(image, self.cameraMatrix, self.distCfs, rvecs[i], tvecs[i], 0.1)
+            for i in range(len(corners)):
+                normals.append(self.__getOrientation(image, corners[i]))
 
         else:
             logError("No aruco detected", tag)
@@ -59,6 +60,34 @@ class ArucoDetector:
         log(f'Image\'s been processed', tag)
 
         if len(corners) > 0:
-            return ArucoInfo(ids.flatten(), True)
+            return ArucoInfo(ids.flatten(), normals, True)
         else:
-            return ArucoInfo([], False)
+            return ArucoInfo([], [], False)
+
+    def __getOrientation(self, image, corners) -> np.ndarray:
+        side = 10
+        marker_points_3d = np.array([[-side / 2, side / 2, 0],
+                                     [side / 2, side / 2, 0],
+                                     [side / 2, -side / 2, 0],
+                                     [-side / 2, -side / 2, 0]],
+                                    dtype=np.float32)
+
+        success, rVecs, tVecs = cv.solvePnP(marker_points_3d, corners, self.cameraMatrix, self.distCfs,
+                                            flags=cv.SOLVEPNP_IPPE_SQUARE)
+
+        if success:
+            R, _ = cv.Rodrigues(rVecs)
+
+            normal = R[:, 2]
+
+            endPoint, _ = cv.projectPoints(np.array([(0.0, 0.0, 5.0)]),
+                                           rVecs, tVecs, self.cameraMatrix, self.distCfs)
+
+            point1 = (int(np.average(corners[0, :, 0])), int(np.average(corners[0, :, 1])))
+            point2 = (int(endPoint[0][0][0]), int(endPoint[0][0][1]))
+
+            cv.line(image, point1, point2, (0, 0, 255), 2)
+
+            return normal
+        else:
+            return None

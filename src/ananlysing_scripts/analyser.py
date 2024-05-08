@@ -36,7 +36,7 @@ class Analyser:
     def __init__(self, executor):
         self.hardwareExecutor = executor
 
-        self.arucoDetector = ArucoDetector()
+        self.arucoDetector = ArucoDetector(self.hardwareExecutor.cameraMatrix, self.hardwareExecutor.distCfs)
 
     def onIteration(self):
         logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, {len(self.__gyroListeners)}", tag)
@@ -66,12 +66,12 @@ class Analyser:
             self.scannedArucoIds.append(arucoId)
             self.scannedArucoIdsSet.add(arucoId)
 
-            if self.rotateLeft:
-                self.rotate(10)
-                self.rotateLeft = False
-            else:
-                self.rotate(-10)
-                self.rotateLeft = True
+            # if self.rotateLeft:
+            #     self.rotate(15)
+            #     self.rotateLeft = False
+            # else:
+            #     self.rotate(-15)
+            #     self.rotateLeft = True
 
     def onGyroIteration(self):
         currentTime = time.time()
