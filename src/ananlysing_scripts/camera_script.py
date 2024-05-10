@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 import numpy as np
@@ -9,16 +10,52 @@ from src.logger import log, logError
 tag = "Camera"
 
 
+def rad2Deg(rad):
+    return rad * 180 / math.pi
+
+
 class ArucoInfo:
     ids: np.ndarray
     isFound: bool
 
     normals: list
 
+    angles: list[float]
+
     def __init__(self, arucoIds, normals, isFound):
         self.ids = arucoIds
         self.normals = normals
         self.isFound = isFound
+
+        self.__calcAngles()
+        log(f"Detected ArUco marker IDs:{self.ids.flatten()}, normals: {normals}, angles: {self.angles}", "ArucoInfo")
+
+    def __calcAngles(self):
+        self.angles = []
+
+        for normal in self.normals:
+            if normal is None:
+                self.angles.append(None)
+                continue
+
+            dx = normal[0]
+            dz = normal[2]
+
+            angle: float
+            if dz > 0 > dx:
+                # sec quarter
+                angle = rad2Deg(math.atan(-dx / dz))
+            elif dz < 0 and dx < 0:
+                # third quarter
+                angle = rad2Deg(math.atan(dz / dx)) + 90
+            elif dz < 0 < dx:
+                # forth quarter
+                angle = rad2Deg(math.atan(dx / (-dz))) + 180
+            else:
+                # first quarter
+                angle = rad2Deg(math.atan(dz / dx)) + 270
+
+            self.angles.append(angle)
 
 
 class ArucoDetector:
@@ -46,11 +83,11 @@ class ArucoDetector:
         normals = []
         if len(corners) > 0:
             aruco.drawDetectedMarkers(image, corners, ids)
-            log("Detected ArUco marker IDs:" + str(ids.flatten()), tag)
 
             for i in range(len(corners)):
                 normals.append(self.__getOrientation(image, corners[i]))
 
+            log("Found ArUco marker IDs:" + str(ids.flatten()), tag)
         else:
             logError("No aruco detected", tag)
 

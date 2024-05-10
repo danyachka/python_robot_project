@@ -1,3 +1,4 @@
+import sys
 import threading
 
 import sim
@@ -12,22 +13,40 @@ from src.execution_scripts.hardware_executor import HardwareExecutorEmulator, Ha
 
 from src.logger import log, logBlue, logError
 
+tag = "Iterator"
+
 
 class Iterator:
-    clientId = None
+    isEmulation: bool
+
+    clientId = 0
+
     simTime = 0
 
     analyser: Analyser
 
     executor: HardwareExecutorModel
 
-    def __init__(self, sim_client_id, isEmulation):
-        self.clientId = sim_client_id
+    def __init__(self, isEmulation):
+        self.isEmulation = isEmulation
 
         if isEmulation:
-            self.executor = HardwareExecutorEmulator(sim_client_id)
+            sim.simxFinish(-1)  # just in case, close all opened connections
+
+            # В главном скрипте адрес и порт должны быть такими же
+            self.clientId = sim.simxStart('127.0.0.1', 19999, True,
+                                          True, 2000, 1)
+
+            if self.clientId != -1:  # check if client connection successful
+                logBlue('Connected to remote API server', tag)
+
+            else:
+                logError('Connection not successful', tag)
+                sys.exit('Could not connect')
+
+            self.executor = HardwareExecutorEmulator(self.clientId)
         else:
-            self.executor = HardwareExecutor(sim_client_id)
+            self.executor = HardwareExecutor()
 
         self.analyser = Analyser(self.executor)
         self.executor.setAnalyser(self.analyser)
@@ -80,5 +99,6 @@ class Iterator:
 
     def onDestroy(self):
         cv.destroyAllWindows()
-        sim.simxFinish(self.clientId)
 
+        if self.isEmulation:
+            sim.simxFinish(self.clientId)

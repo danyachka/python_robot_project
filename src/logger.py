@@ -13,7 +13,7 @@ def __getTheadName():
     elif threadId == constants.gyroThreadId:
         return "Gyro "
 
-    return "Unkn "
+    return Fore.RED + "Unkn " + Fore.RESET
 
 
 def log(text, tag=""):

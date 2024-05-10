@@ -19,8 +19,6 @@ tag = "HardwareExecutor"
 class HardwareExecutorModel:
     __metaclass__ = ABCMeta
 
-    clientId = 0
-
     analyser = None
 
     cameraMatrix = None
@@ -28,8 +26,8 @@ class HardwareExecutorModel:
     distCfs = None
 
     @abstractmethod
-    def __init__(self, clientId):
-        self.clientId = clientId
+    def __init__(self):
+        pass
 
     def setAnalyser(self, analyser):
         self.analyser = analyser
@@ -69,6 +67,9 @@ class HardwareExecutorModel:
 
 # Should execute commands in simulation
 class HardwareExecutorEmulator(HardwareExecutorModel):
+
+    clientId = 0
+
     frontLeftWheel = None
     frontRightWheel = None
     backLeftWheel = None
@@ -93,7 +94,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
     distCfs = np.array([[7.43051630e-02, -5.16983657e+00, -1.01402024e-03, -2.80294514e-04, 9.13089594e+01]])
 
     def __init__(self, clientId):
-        super().__init__(clientId)
+        super().__init__()
+
+        self.clientId = clientId
 
         res, self.frontLeftWheel = sim.simxGetObjectHandle(
             clientId, './front_left_wheel', sim.simx_opmode_oneshot_wait)
@@ -277,8 +280,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 # Should execute commands with actual hardware
 class HardwareExecutor(HardwareExecutorModel):
 
-    def __init__(self, clientId):
-        super().__init__(clientId)
+    def __init__(self):
+        super().__init__()
 
     def readImage(self) -> np.ndarray:
         pass
