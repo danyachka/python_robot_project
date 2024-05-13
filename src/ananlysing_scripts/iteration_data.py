@@ -1,5 +1,7 @@
 from enum import Enum
 
+from src.ananlysing_scripts.camera_script import ArucoInfo
+
 import numpy as np
 import time
 
@@ -41,7 +43,7 @@ class IterationData:
 
     sonarData: SonarInfo = SonarInfo(-1, -1, -1, -1)
 
-    arucoResult = None
+    arucoResult: ArucoInfo = None
 
     isRotating: bool = False
 

@@ -1,5 +1,4 @@
 import math
-from pathlib import Path
 
 import numpy as np
 import cv2 as cv
@@ -74,7 +73,7 @@ class ArucoDetector:
 
     def onImage(self, image: np.ndarray) -> ArucoInfo:
         if image is None:
-            return ArucoInfo([], [], False)
+            return ArucoInfo(np.array([]), [], False)
 
         # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
@@ -99,7 +98,7 @@ class ArucoDetector:
         if len(corners) > 0:
             return ArucoInfo(ids.flatten(), normals, True)
         else:
-            return ArucoInfo([], [], False)
+            return ArucoInfo(np.array([]), [], False)
 
     def __getOrientation(self, image, corners) -> np.ndarray:
         side = 10

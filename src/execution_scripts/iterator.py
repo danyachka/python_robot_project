@@ -27,29 +27,32 @@ class Iterator:
 
     executor: HardwareExecutorModel
 
-    def __init__(self, isEmulation):
+    def __init__(self, isEmulation, arucoDict):
         self.isEmulation = isEmulation
 
         if isEmulation:
-            sim.simxFinish(-1)  # just in case, close all opened connections
-
-            # В главном скрипте адрес и порт должны быть такими же
-            self.clientId = sim.simxStart('127.0.0.1', 19999, True,
-                                          True, 2000, 1)
-
-            if self.clientId != -1:  # check if client connection successful
-                logBlue('Connected to remote API server', tag)
-
-            else:
-                logError('Connection not successful', tag)
-                sys.exit('Could not connect')
+            self.__startSimulation()
 
             self.executor = HardwareExecutorEmulator(self.clientId)
         else:
             self.executor = HardwareExecutor()
 
-        self.analyser = Analyser(self.executor)
+        self.analyser = Analyser(self.executor, arucoDict)
         self.executor.setAnalyser(self.analyser)
+
+    def __startSimulation(self):
+        sim.simxFinish(-1)  # just in case, close all opened connections
+
+        # В главном скрипте адрес и порт должны быть такими же
+        self.clientId = sim.simxStart('127.0.0.1', 19999, True,
+                                      True, 2000, 1)
+
+        if self.clientId != -1:  # check if client connection successful
+            logBlue('Connected to remote API server', tag)
+
+        else:
+            logError('Connection not successful', tag)
+            sys.exit('Could not connect')
 
     def start(self):
         gyroThread = Thread(target=self.startGyroIteration, args=[], daemon=True)

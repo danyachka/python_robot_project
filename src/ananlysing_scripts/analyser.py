@@ -13,9 +13,11 @@ tag = "Iteration"
 
 
 class Analyser:
-    rotateLeft = True
+    # rotateLeft = True
 
     state: State = State.MOVING_TO_TARGET
+
+    arucoDict: dict[int, float]
     scannedArucoIds: list = []
     scannedArucoIdsSet = set()
 
@@ -33,8 +35,9 @@ class Analyser:
 
     gyroTimeStamp = time.time()
 
-    def __init__(self, executor):
+    def __init__(self, executor: HardwareExecutorModel, arucoDict: dict[int, float]):
         self.hardwareExecutor = executor
+        self.arucoDict = arucoDict
 
         self.arucoDetector = ArucoDetector(self.hardwareExecutor.cameraMatrix, self.hardwareExecutor.distCfs)
 
@@ -59,19 +62,23 @@ class Analyser:
         if self.state != State.MOVING_TO_TARGET:
             return
 
-        for arucoId in self.iterationData.arucoResult.ids:
+        for arucoId, i in enumerate(self.iterationData.arucoResult.ids):
             if arucoId in self.scannedArucoIdsSet:
                 continue
+
+            angle = self.arucoDict[arucoId]
+            if angle is None:
+                continue
+
+            angleToRotate = self.iterationData.arucoResult.angles[i] - angle
+            print(angleToRotate)
+            self.currentDirectionAngle = angleToRotate
+            self.rotate(toRotate=angleToRotate)
 
             self.scannedArucoIds.append(arucoId)
             self.scannedArucoIdsSet.add(arucoId)
 
-            # if self.rotateLeft:
-            #     self.rotate(15)
-            #     self.rotateLeft = False
-            # else:
-            #     self.rotate(-15)
-            #     self.rotateLeft = True
+            return
 
     def onGyroIteration(self):
         currentTime = time.time()
@@ -93,19 +100,21 @@ class Analyser:
         self.__notifyGyroListeners(self.iterationData.gyroData, dt)
         self.gyroTimeStamp = currentTime
 
-    def rotate(self, angle):
+    def rotate(self, *, angle=0., toRotate=0.):
         if self.state == State.ROTATING:
             logError("Trying to start rotation during ROTATING state", tag)
             return
 
         self.state = State.ROTATING
-        toRotate = self.absoluteAngle + angle
+        if toRotate == 0:
+            toRotate = self.absoluteAngle - angle
+
         if toRotate < 0:
             toRotate = 360 + toRotate
         if toRotate >= 360:
             toRotate = toRotate % 360
 
-        self.hardwareExecutor.rotate(toRotate, angle)
+        self.hardwareExecutor.rotate(toRotate, toRotate > 0)
 
     def onRotationEnd(self):
         self.state = State.MOVING_TO_TARGET
