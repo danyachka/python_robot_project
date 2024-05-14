@@ -27,7 +27,7 @@ class Iterator:
 
     executor: HardwareExecutorModel
 
-    def __init__(self, isEmulation, arucoDict):
+    def __init__(self, isEmulation, arucoDict, finish):
         self.isEmulation = isEmulation
 
         if isEmulation:
@@ -37,7 +37,7 @@ class Iterator:
         else:
             self.executor = HardwareExecutor()
 
-        self.analyser = Analyser(self.executor, arucoDict)
+        self.analyser = Analyser(self.executor, arucoDict, finish)
         self.executor.setAnalyser(self.analyser)
 
     def __startSimulation(self):

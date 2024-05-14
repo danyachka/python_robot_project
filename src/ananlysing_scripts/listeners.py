@@ -1,4 +1,7 @@
+import math
+
 from src import constants
+from src.ananlysing_scripts.camera_script import rad2Deg
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 
 from src.logger import log
@@ -25,14 +28,31 @@ class ArucoCloserListener(StepListener):
         if self.analyser.currentArucoId == -1:
             self.endListening()
 
-        if constants.ARUCO_DISTANCE < iterationData.sonarData.front < constants.SONAR_MAX_DIST:
-            return
-
+        # Check if robot is close enough
         if constants.SONAR_FAKE_MIN < iterationData.sonarData.front < constants.ARUCO_DISTANCE:
             self.endListening()
             return
 
-        self.endListening()
+        # Rotate if angle is missing
+        arucoResult = iterationData.arucoResult
+        for i, arucoId in enumerate(arucoResult.ids):
+            if arucoId != self.analyser.currentArucoId:
+                continue
+
+            if arucoId != self.analyser.finishId:
+                angle = self.analyser.arucoDict[arucoId]
+            else:
+                angle = 0
+            self.analyser.currentArucoDirectionAngle = arucoResult.angles[i] + angle
+
+            angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
+                                              math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
+
+            isMissingDirection = abs(angleToRotate) > constants.MAX_MISSING_ANGLE
+            if isMissingDirection:
+                self.analyser.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
+                self.analyser.removeListener(self)
+                return
 
 
 class GyroListener:

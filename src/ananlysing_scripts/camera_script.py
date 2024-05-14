@@ -29,10 +29,7 @@ class ArucoInfo:
         self.isFound = isFound
         self.centers = centers
 
-        self.__calcAngles()
-        log(f"Detected ArUco marker IDs:{self.ids.flatten()}, normals: {normals}, angles: {self.angles}", "ArucoInfo")
-
-    def __calcAngles(self):
+    def calcAngles(self, absoluteAngle):
         self.angles = []
 
         for normal in self.normals:
@@ -57,7 +54,12 @@ class ArucoInfo:
                 # first quarter
                 angle = rad2Deg(math.atan(dz / dx)) + 270
 
+            angle = (angle + absoluteAngle) % 360
+
             self.angles.append(angle)
+
+        log(f"Detected ArUco marker IDs:{self.ids.flatten()}, normals: {self.normals}, "
+            f"angles: {self.angles}", "ArucoInfo")
 
 
 class ArucoDetector:

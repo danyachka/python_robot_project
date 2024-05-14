@@ -15,7 +15,6 @@ from src.logger import log, logError
 tag = "HardwareExecutor"
 
 
-# How to create interfaces (abstract classes)?
 class HardwareExecutorModel:
     __metaclass__ = ABCMeta
 

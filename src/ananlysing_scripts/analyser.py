@@ -20,6 +20,7 @@ class Analyser:
 
     currentArucoId: int = -1
     arucoDict: dict[int, float]
+    finishId: int = -1
     scannedArucoIds: list = []
     scannedArucoIdsSet = set()
 
@@ -37,9 +38,10 @@ class Analyser:
 
     gyroTimeStamp = time.time()
 
-    def __init__(self, executor: HardwareExecutorModel, arucoDict: dict[int, float]):
+    def __init__(self, executor: HardwareExecutorModel, arucoDict: dict[int, float], finishId: int):
         self.hardwareExecutor = executor
         self.arucoDict = arucoDict
+        self.finishId = finishId
 
         self.arucoDetector = ArucoDetector(self.hardwareExecutor.cameraMatrix, self.hardwareExecutor.distCfs)
 
@@ -50,6 +52,7 @@ class Analyser:
 
         self.iterationData.cameraImage = self.hardwareExecutor.readImage()
         self.iterationData.arucoResult = self.arucoDetector.onImage(self.iterationData.cameraImage)
+        self.iterationData.arucoResult.calcAngles(self.absoluteAngle)
 
         if self.iterationData.arucoResult.isFound:
             self.onArucoFound()
@@ -60,24 +63,30 @@ class Analyser:
         self.notifyListeners(self.iterationData, self.previousData)
 
     def onArucoFound(self):
-        # placeHolder
+        arucoResult: ArucoInfo = self.iterationData.arucoResult
+
+        # usual handling
         if self.state != State.MOVING2TARGET:
             return
 
-        for i, arucoId in enumerate(self.iterationData.arucoResult.ids):
+        for i, arucoId in enumerate(arucoResult.ids):
             if arucoId in self.scannedArucoIdsSet:
                 continue
 
-            angle = self.arucoDict[arucoId]
-            if angle is None:
+            if arucoId not in self.arucoDict and arucoId != self.finishId:
                 continue
+
+            if arucoId != self.finishId:
+                angle = self.arucoDict[arucoId]
+            else:
+                angle = 0
             self.currentArucoId = arucoId
 
-            angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - self.iterationData.arucoResult.centers[i]) *
+            angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
                                               math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
 
             print(angleToRotate)
-            self.currentArucoDirectionAngle = self.iterationData.arucoResult.angles[i] + angle
+            self.currentArucoDirectionAngle = arucoResult.angles[i] + angle
             self.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
 
             self.scannedArucoIds.append(arucoId)
@@ -141,6 +150,12 @@ class Analyser:
         if self.state != State.GETTING_CLOSER2ARUCO:
             return
 
+        if self.currentArucoId == self.finishId:
+            self.hardwareExecutor.setSpeed(0)
+            self.state = State.STOP
+            return
+
+        self.currentArucoId = -1
         self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
 
     def registerListener(self, listener):

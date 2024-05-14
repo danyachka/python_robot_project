@@ -1,17 +1,18 @@
 from execution_scripts.iterator import Iterator
 
 
-def parseDictionary() -> dict[int, float]:
+def parseDictionary() -> tuple[dict[int, float], int]:
     return {
         0: -84.62,
         20: 79.46,
         15: 8,
-        6: 21.9
-    }
+        6: 2
+    }, 13
 
 
 def main():
-    iterator = Iterator(True, parseDictionary())
+    d, f = parseDictionary()
+    iterator = Iterator(True, d, f)
     iterator.start()
 
 
