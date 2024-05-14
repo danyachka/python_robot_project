@@ -1,7 +1,7 @@
 import time
 
 from src import constants
-from src.ananlysing_scripts.listeners import StepListener, GyroListener
+from src.ananlysing_scripts.listeners import StepListener, GyroListener, ArucoCloserListener
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
@@ -15,8 +15,9 @@ tag = "Iteration"
 class Analyser:
     # rotateLeft = True
 
-    state: State = State.MOVING_TO_TARGET
+    state: State = State.MOVING2TARGET
 
+    currentArucoId: int = -1
     arucoDict: dict[int, float]
     scannedArucoIds: list = []
     scannedArucoIdsSet = set()
@@ -30,8 +31,8 @@ class Analyser:
 
     arucoDetector: ArucoDetector
 
-    absoluteAngle: float = 0
-    currentDirectionAngle: float = 0
+    absoluteAngle: float = 0.
+    currentArucoDirectionAngle: float = 0.
 
     gyroTimeStamp = time.time()
 
@@ -59,7 +60,7 @@ class Analyser:
 
     def onArucoFound(self):
         # placeHolder
-        if self.state != State.MOVING_TO_TARGET:
+        if self.state != State.MOVING2TARGET:
             return
 
         for arucoId, i in enumerate(self.iterationData.arucoResult.ids):
@@ -69,11 +70,17 @@ class Analyser:
             angle = self.arucoDict[arucoId]
             if angle is None:
                 continue
+            self.currentArucoId = arucoId
 
-            angleToRotate = self.iterationData.arucoResult.angles[i] - angle
+            angleToRotate = self.iterationData.arucoResult.angles[i]
+            if angleToRotate > 180:
+                angleToRotate -= 180
+            else:
+                angleToRotate += 180
+
             print(angleToRotate)
-            self.currentDirectionAngle = angleToRotate
-            self.rotate(toRotate=angleToRotate)
+            self.currentArucoDirectionAngle = self.iterationData.arucoResult.angles[i] + angle
+            self.rotate(toRotate=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
 
             self.scannedArucoIds.append(arucoId)
             self.scannedArucoIdsSet.add(arucoId)
@@ -100,7 +107,7 @@ class Analyser:
         self.__notifyGyroListeners(self.iterationData.gyroData, dt)
         self.gyroTimeStamp = currentTime
 
-    def rotate(self, *, angle=0., toRotate=0.):
+    def rotate(self, *, angle=0., toRotate=0., stateAfterRotation):
         if self.state == State.ROTATING:
             logError("Trying to start rotation during ROTATING state", tag)
             return
@@ -114,14 +121,29 @@ class Analyser:
         if toRotate >= 360:
             toRotate = toRotate % 360
 
-        self.hardwareExecutor.rotate(toRotate, toRotate > 0)
+        left: bool
+        if self.absoluteAngle < 180:
+            left = self.absoluteAngle < toRotate < self.absoluteAngle + 180
+        else:
+            left = not (self.absoluteAngle - 180 < toRotate < self.absoluteAngle)
 
-    def onRotationEnd(self):
-        self.state = State.MOVING_TO_TARGET
+        self.hardwareExecutor.rotate(toRotate, left, stateAfterRotation)
 
-        # placeHolder
-        self.scannedArucoIds = []
-        self.scannedArucoIdsSet = set()
+    def onRotationEnd(self, toState):
+        self.state = toState
+
+        match toState:
+            case State.MOVING2TARGET:
+                self.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
+            case State.GETTING_CLOSER2ARUCO:
+                self.registerListener(ArucoCloserListener(self))
+                self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+
+    def onGotClose2Aruco(self):
+        if self.state != State.GETTING_CLOSER2ARUCO:
+            return
+
+        self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
 
     def registerListener(self, listener):
         self.__listeners.append(listener)
@@ -141,4 +163,4 @@ class Analyser:
 
     def __notifyGyroListeners(self, gyroData, dt):
         for listener in self.__gyroListeners:
-            listener.onStep(gyroData, self.absoluteAngle, self.currentDirectionAngle, dt)
+            listener.onStep(gyroData, self.absoluteAngle, self.currentArucoDirectionAngle, dt)

@@ -61,7 +61,7 @@ class HardwareExecutorModel:
         pass
 
     @abstractmethod
-    def rotate(self, toRotate, degrees) -> None:
+    def rotate(self, toRotate, degrees, toState) -> None:
         pass
 
 
@@ -236,6 +236,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         pass
 
     def setRightSpeed(self, speed) -> None:
+        speed = -speed
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.frontRightWheel, -speed, sim.simx_opmode_oneshot_wait)
         log(f'frontRightWheel: {error is sim.simx_return_ok}', tag)
@@ -245,6 +246,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         log(f'backRightWheel: {error is sim.simx_return_ok}', tag)
 
     def setLeftSpeed(self, speed) -> None:
+        speed = -speed
         error = (sim.simxSetJointTargetVelocity
                  (self.clientId, self.frontLeftWheel, speed, sim.simx_opmode_oneshot_wait))
         log(f'frontLeftWheel: {error is sim.simx_return_ok}', tag)
@@ -257,22 +259,22 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
         self.setLeftSpeed(speed)
         self.setRightSpeed(speed)
 
-    def rotate(self, toRotate, left) -> None:
+    def rotate(self, toRotate, left, toState) -> None:
 
         self.setLeftSpeed(0)
         self.setRightSpeed(0)
 
         self.isRotating = True
 
-        listener = RotationListener(self, toRotate)
+        listener = RotationListener(self, toRotate, toState)
 
         v = 0.5
         if left:
-            self.setLeftSpeed(-v)
-            self.setRightSpeed(v)
-        else:
             self.setLeftSpeed(v)
             self.setRightSpeed(-v)
+        else:
+            self.setLeftSpeed(-v)
+            self.setRightSpeed(v)
 
         self.analyser.registerGyroListener(listener)
 
@@ -304,5 +306,5 @@ class HardwareExecutor(HardwareExecutorModel):
     def setLeftSpeed(self, speed) -> None:
         pass
 
-    def rotate(self, toRotate, degrees) -> None:
+    def rotate(self, toRotate, degrees, toState) -> None:
         pass

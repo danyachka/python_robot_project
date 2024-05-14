@@ -11,9 +11,11 @@ class State(Enum):
 
     ROTATING = 1
 
-    MOVING_TO_TARGET = 2
+    MOVING2TARGET = 2
 
-    SCANNING_OBSTACLE = 3
+    GETTING_CLOSER2ARUCO = 3
+
+    SCANNING_OBSTACLE = 4
 
 
 class SonarInfo:
