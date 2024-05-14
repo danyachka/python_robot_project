@@ -1,3 +1,4 @@
+import math
 import time
 
 from src import constants
@@ -5,7 +6,7 @@ from src.ananlysing_scripts.listeners import StepListener, GyroListener, ArucoCl
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
-from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo
+from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo, rad2Deg
 
 from src.logger import log, logBlue, logError
 
@@ -63,7 +64,7 @@ class Analyser:
         if self.state != State.MOVING2TARGET:
             return
 
-        for arucoId, i in enumerate(self.iterationData.arucoResult.ids):
+        for i, arucoId in enumerate(self.iterationData.arucoResult.ids):
             if arucoId in self.scannedArucoIdsSet:
                 continue
 
@@ -72,15 +73,12 @@ class Analyser:
                 continue
             self.currentArucoId = arucoId
 
-            angleToRotate = self.iterationData.arucoResult.angles[i]
-            if angleToRotate > 180:
-                angleToRotate -= 180
-            else:
-                angleToRotate += 180
+            angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - self.iterationData.arucoResult.centers[i]) *
+                                              math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
 
             print(angleToRotate)
             self.currentArucoDirectionAngle = self.iterationData.arucoResult.angles[i] + angle
-            self.rotate(toRotate=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
+            self.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
 
             self.scannedArucoIds.append(arucoId)
             self.scannedArucoIdsSet.add(arucoId)
@@ -114,7 +112,7 @@ class Analyser:
 
         self.state = State.ROTATING
         if toRotate == 0:
-            toRotate = self.absoluteAngle - angle
+            toRotate = self.absoluteAngle + angle
 
         if toRotate < 0:
             toRotate = 360 + toRotate

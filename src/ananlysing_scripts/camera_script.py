@@ -21,10 +21,13 @@ class ArucoInfo:
 
     angles: list[float]
 
-    def __init__(self, arucoIds, normals, isFound):
+    centers: list[int]
+
+    def __init__(self, arucoIds, normals, isFound, centers):
         self.ids = arucoIds
         self.normals = normals
         self.isFound = isFound
+        self.centers = centers
 
         self.__calcAngles()
         log(f"Detected ArUco marker IDs:{self.ids.flatten()}, normals: {normals}, angles: {self.angles}", "ArucoInfo")
@@ -64,26 +67,33 @@ class ArucoDetector:
 
     distCfs = None
 
-    def __init__(self, cameraMatrix, distCfs):
+    isTest: bool
+
+    def __init__(self, cameraMatrix, distCfs, isTest=False):
         arucoDict = aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
         arucoParams = aruco.DetectorParameters()
         self.detector = aruco.ArucoDetector(arucoDict, arucoParams)
         self.cameraMatrix = cameraMatrix
         self.distCfs = distCfs
+        self.isTest = isTest
 
     def onImage(self, image: np.ndarray) -> ArucoInfo:
         if image is None:
-            return ArucoInfo(np.array([]), [], False)
+            return ArucoInfo(np.array([]), [], False, [])
 
         # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
         corners, ids, rejected = self.detector.detectMarkers(image)
 
         normals = []
+        centers = []
         if len(corners) > 0:
             aruco.drawDetectedMarkers(image, corners, ids)
 
             for i in range(len(corners)):
+                center = abs(corners[i][0][0][0] + corners[i][0][2][0]) / 2
+                # cv.line(image, (int(center), 0), (int(center), 479), (0, 0, 255))
+                centers.append(center)
                 normals.append(self.__getOrientation(image, corners[i]))
 
             log("Found ArUco marker IDs:" + str(ids.flatten()), tag)
@@ -91,14 +101,17 @@ class ArucoDetector:
             logError("No aruco detected", tag)
 
         cv.imshow("Camera image", image)
-        cv.waitKey(1)
+        if self.isTest:
+            cv.waitKey(10000)
+        else:
+            cv.waitKey(1)
 
         log(f'Image\'s been processed', tag)
 
         if len(corners) > 0:
-            return ArucoInfo(ids.flatten(), normals, True)
+            return ArucoInfo(ids.flatten(), normals, True, centers)
         else:
-            return ArucoInfo(np.array([]), [], False)
+            return ArucoInfo(np.array([]), [], False, [])
 
     def __getOrientation(self, image, corners) -> np.ndarray:
         side = 10

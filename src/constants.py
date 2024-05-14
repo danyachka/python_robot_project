@@ -1,3 +1,5 @@
+import math
+
 main_dt = 0.1
 
 gyro_dt = 1 / 100
@@ -15,4 +17,9 @@ ARUCO_DISTANCE = 0.6
 
 
 MOVEMENT_SPEED = 2
-LOW_MOVEMENT_SPEED = MOVEMENT_SPEED / 2
+LOW_MOVEMENT_SPEED = MOVEMENT_SPEED
+
+
+imageW = 640
+imageH = 480
+CAMERA_ANGLE = math.pi / 4

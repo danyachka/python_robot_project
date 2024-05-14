@@ -4,9 +4,9 @@ from execution_scripts.iterator import Iterator
 def parseDictionary() -> dict[int, float]:
     return {
         0: -84.62,
-        1: 79.46,
-        2: 8,
-        3: 21.9
+        20: 79.46,
+        15: 8,
+        6: 21.9
     }
 
 

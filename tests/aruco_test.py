@@ -6,7 +6,7 @@ from src.ananlysing_scripts.camera_script import ArucoDetector
 
 
 def main():
-    path = Path(__file__).parent.parent.joinpath("data/aruco.png")
+    path = Path(__file__).parent.parent.joinpath("data/img_2.png")
 
     img = cv.imread(str(path))
 
@@ -16,7 +16,7 @@ def main():
 
     distCfs = np.array([[7.43051630e-02, -5.16983657e+00, -1.01402024e-03, -2.80294514e-04, 9.13089594e+01]])
 
-    arucoDetector = ArucoDetector(cameraMatrix, distCfs)
+    arucoDetector = ArucoDetector(cameraMatrix, distCfs, True)
 
     arucoDetector.onImage(img)
 
