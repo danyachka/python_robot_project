@@ -2,7 +2,7 @@ import math
 import time
 
 from src import constants
-from src.ananlysing_scripts.listeners import StepListener, GyroListener, ArucoCloserListener
+from src.ananlysing_scripts.listeners import StepListener, GyroListener, ArucoCloserListener, Moving2TargetListener
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
@@ -43,10 +43,13 @@ class Analyser:
         self.arucoDict = arucoDict
         self.finishId = finishId
 
+        self.__listeners.append(Moving2TargetListener(self))
+
         self.arucoDetector = ArucoDetector(self.hardwareExecutor.cameraMatrix, self.hardwareExecutor.distCfs)
 
     def onIteration(self):
-        logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, {len(self.__gyroListeners)}", tag)
+        logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, "
+                f"{len(self.__gyroListeners)} and {len(self.__listeners)}", tag)
         self.previousData = self.iterationData
         self.iterationData = IterationData()
 
@@ -141,6 +144,7 @@ class Analyser:
 
         match toState:
             case State.MOVING2TARGET:
+                self.registerListener(Moving2TargetListener(self))
                 self.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
             case State.GETTING_CLOSER2ARUCO:
                 self.registerListener(ArucoCloserListener(self))
@@ -157,6 +161,10 @@ class Analyser:
 
         self.currentArucoId = -1
         self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
+
+    def onObstacleFound(self):
+        # TODO: obstacles borders found algorithm, create new GettingAroundObstacleListener, new State
+        ...
 
     def registerListener(self, listener):
         self.__listeners.append(listener)
