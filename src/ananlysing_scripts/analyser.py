@@ -1,4 +1,5 @@
 import math
+import random
 import time
 
 from src import constants
@@ -62,6 +63,9 @@ class Analyser:
 
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
         log(f"Sonar read points = {self.iterationData.sonarData}", tag)
+
+        if random.randint(0, 10) == 5:
+            raise Exception("WTF Lol", "AHAHHAHA, exception")
 
         self.notifyListeners(self.iterationData, self.previousData)
 

@@ -1,5 +1,6 @@
 import sys
 import threading
+import json
 
 import sim
 import time
@@ -60,48 +61,72 @@ class Iterator:
         self.startMainIteration()
 
     def startMainIteration(self):
-        constants.mainThreadId = threading.get_ident()
+        try:
+            constants.mainThreadId = threading.get_ident()
 
-        isRotated = False
-        frame_delay = main_dt
-        while True:
-            iterationStartTime = time.time()
+            isRotated = False
+            frame_delay = main_dt
+            while True:
+                iterationStartTime = time.time()
 
-            self.analyser.onIteration()
+                self.analyser.onIteration()
 
-            # if not isRotated:
-            #     isRotated = True
-            #     executor.rotate(720)
+                # if not isRotated:
+                #     isRotated = True
+                #     executor.rotate(720)
 
-            # waite util next tick
-            elapsed_time = time.time() - iterationStartTime
-            if elapsed_time < frame_delay:
-                time.sleep(frame_delay - elapsed_time)
+                # waite util next tick
+                elapsed_time = time.time() - iterationStartTime
+                if elapsed_time < frame_delay:
+                    time.sleep(frame_delay - elapsed_time)
 
-            iterationTime = time.time() - iterationStartTime
-            logBlue(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n',
-                    "Iterator (Main)")
+                iterationTime = time.time() - iterationStartTime
+                logBlue(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n',
+                        "Iterator (Main)")
+        except Exception as e:
+            self.onException(e, True)
 
     def startGyroIteration(self):
-        constants.gyroThreadId = threading.get_ident()
+        try:
+            constants.gyroThreadId = threading.get_ident()
 
-        frame_delay = gyro_dt
-        while True:
-            iterationStartTime = time.time()
+            frame_delay = gyro_dt
+            while True:
+                iterationStartTime = time.time()
 
-            self.analyser.onGyroIteration()
+                self.analyser.onGyroIteration()
 
-            # waite util next tick
-            elapsed_time = time.time() - iterationStartTime
-            if elapsed_time < frame_delay:
-                time.sleep(frame_delay - elapsed_time)
+                # waite util next tick
+                elapsed_time = time.time() - iterationStartTime
+                if elapsed_time < frame_delay:
+                    time.sleep(frame_delay - elapsed_time)
 
-            iterationTime = time.time() - iterationStartTime
-            logBlue(f'Gyro iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}',
-                    "Iterator (Gyro)")
+                iterationTime = time.time() - iterationStartTime
+                logBlue(f'Gyro iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}',
+                        "Iterator (Gyro)")
+        except Exception as e:
+            self.onException(e, False)
 
     def onDestroy(self):
         cv.destroyAllWindows()
 
         if self.isEmulation:
             sim.simxFinish(self.clientId)
+
+    def onException(self, exception: Exception, isMainThread):
+        resDict = {
+            constants.ERROR_MESSAGE: exception.args,
+            constants.IS_IN_MAIN: isMainThread,
+            constants.CURRENT_DIRECTION: self.analyser.currentArucoDirectionAngle,
+            constants.CURRENT_ID: self.analyser.currentArucoId,
+            constants.CURRENT_ANGLE: self.analyser.absoluteAngle,
+            constants.READ_IDS: self.analyser.scannedArucoIds,
+            constants.STATE: self.analyser.state.name
+        }
+
+        text = json.dumps(resDict)
+
+        file = open("data/exception_res.json", "w")
+        file.write(text)
+        file.close()
+
