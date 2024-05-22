@@ -7,10 +7,116 @@ from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, Stat
 from src.logger import log
 
 
+def isAngleClose(angle1, angle2):
+    return abs(angle1 - angle2) < 1.5
+
+
+def angleToCoords(angle):
+    if angle < 0:
+        angle = 360 + angle
+    elif angle >= 360:
+        angle = angle % 360
+    return angle
+
+
+def getDeltaAngle(absolute, other):
+    da = 0.
+    if absolute < 180:
+        if absolute <= other <= absolute + 180:
+            da = other - absolute
+        else:
+            if other < absolute:
+                da = absolute - other
+            else:
+                da = absolute + (360 - other)
+            da *= -1
+    else:  # > 180
+        if absolute - 180 <= other <= absolute:
+            da = other - absolute
+        else:
+            if other > absolute:
+                da = other - absolute
+            else:
+                da = other + (360 - absolute)
+
+    return da
+
+
+if __name__ == '__main__':
+    print(getDeltaAngle(90, 45))
+    print(getDeltaAngle(90, 330))
+    print(getDeltaAngle(90, 210))
+    print(getDeltaAngle(250, 45))
+
+
 class StepListener:
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):
         pass
+
+
+class ObstacleScanningListener(StepListener):
+    analyser = None
+
+    anglesMap: dict[float, float] = {}
+
+    counter = 0
+
+    goLeft = True
+
+    rotationLevel = 1
+
+    def __init__(self, analyser):
+        self.analyser = analyser
+
+    def goOverAnObstacle(self, angle):
+        self.analyser.removeListener(self)
+
+        angle = self.analyser.currentArucoDirectionAngle + angle
+        angle = angleToCoords(angle)
+
+        if not isAngleClose(self.analyser.absoluteAngle, angle):
+            self.analyser.rotate(toRotate=angle, stateAfterRotation=State.GETTING_OVER_AN_OBSTACLE)
+
+    def onStep(self, iterationData: IterationData, previousData: IterationData):
+        if self.analyser.state != State.SCANNING_OBSTACLE:
+            self.analyser.removeListener(self)
+            return
+
+        # wait
+        self.counter += 1
+
+        if self.counter < constants.WAIT_TICKS_ON_SONAR:
+            return
+
+        dAlpha = getDeltaAngle(self.analyser.currentArucoDirectionAngle, self.analyser.absoluteAngle)
+
+        sonarData = iterationData.sonarData.front
+        if sonarData is None:
+            self.goOverAnObstacle(dAlpha)
+            return
+
+        self.anglesMap[dAlpha] = sonarData
+        self.counter = 0
+
+        # if all angles checked
+        if (not self.goLeft) and dAlpha < -constants.MAX_ANGLE_TO_CHECK_ON_OBSTACLE:
+            # TODO: figure out what to do ant this point
+            self.analyser.removeListener(self)
+            self.analyser.state = State.STOP
+            return
+
+        if self.goLeft:
+            self.analyser.rotate(toRotate=angleToCoords(
+                self.analyser.currentArucoDirectionAngle + self.rotationLevel * constants.SHOT_ANGLE_ON_OBSTACLE),
+                stateAfterRotation=State.SCANNING_OBSTACLE)
+            self.goLeft = False
+        else:
+            self.analyser.rotate(toRotate=angleToCoords(
+                self.analyser.currentArucoDirectionAngle - self.rotationLevel * constants.SHOT_ANGLE_ON_OBSTACLE),
+                stateAfterRotation=State.SCANNING_OBSTACLE)
+            self.goLeft = True
+            self.rotationLevel += 1
 
 
 class Moving2TargetListener(StepListener):
@@ -39,7 +145,6 @@ class Moving2TargetListener(StepListener):
 
 
 class ArucoCloserListener(StepListener):
-
     analyser = None
 
     def __init__(self, analyser):
@@ -97,11 +202,10 @@ class RotationListener(GyroListener):
         log(f"Angle to rotate = {angleToRotate}", "RotationListener")
 
     def onStep(self, gyroData, absoluteAngle, directionAngle, dt):
-
         log(f'RotationAngle = {absoluteAngle}, subtraction = {abs(self.angleToRotate - absoluteAngle)}'
             , "RotationListener")
 
-        if abs(self.angleToRotate - absoluteAngle) < 1.5:
+        if isAngleClose(self.angleToRotate, absoluteAngle):
             self.executor.isRotating = False
 
             self.executor.setLeftSpeed(0)

@@ -17,6 +17,8 @@ class State(Enum):
 
     SCANNING_OBSTACLE = 4
 
+    GETTING_OVER_AN_OBSTACLE = 5
+
 
 class SonarInfo:
     front: float

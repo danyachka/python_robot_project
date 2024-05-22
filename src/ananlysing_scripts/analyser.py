@@ -3,7 +3,8 @@ import random
 import time
 
 from src import constants
-from src.ananlysing_scripts.listeners import StepListener, GyroListener, ArucoCloserListener, Moving2TargetListener
+from src.ananlysing_scripts.listeners import (angleToCoords, getDeltaAngle, StepListener, GyroListener,
+                                              ArucoCloserListener, Moving2TargetListener)
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
@@ -73,7 +74,8 @@ class Analyser:
         arucoResult: ArucoInfo = self.iterationData.arucoResult
 
         # usual handling
-        if self.state != State.MOVING2TARGET:
+        if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO,
+                          State.SCANNING_OBSTACLE, State.GETTING_OVER_AN_OBSTACLE}:
             return
 
         for i, arucoId in enumerate(arucoResult.ids):
@@ -130,16 +132,9 @@ class Analyser:
         if toRotate == 0:
             toRotate = self.absoluteAngle + angle
 
-        if toRotate < 0:
-            toRotate = 360 + toRotate
-        if toRotate >= 360:
-            toRotate = toRotate % 360
+        toRotate = angleToCoords(toRotate)
 
-        left: bool
-        if self.absoluteAngle < 180:
-            left = self.absoluteAngle < toRotate < self.absoluteAngle + 180
-        else:
-            left = not (self.absoluteAngle - 180 < toRotate < self.absoluteAngle)
+        left: bool = getDeltaAngle(self.absoluteAngle, toRotate) > 0
 
         self.hardwareExecutor.rotate(toRotate, left, stateAfterRotation)
 
@@ -153,6 +148,9 @@ class Analyser:
             case State.GETTING_CLOSER2ARUCO:
                 self.registerListener(ArucoCloserListener(self))
                 self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+            case State.GETTING_OVER_AN_OBSTACLE:
+                # self.registerListener()
+                pass
 
     def onGotClose2Aruco(self):
         if self.state != State.GETTING_CLOSER2ARUCO:

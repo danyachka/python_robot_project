@@ -11,6 +11,7 @@ from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners import RotationListener
 from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
+from src import constants
 
 tag = "HardwareExecutor"
 
@@ -267,7 +268,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         listener = RotationListener(self, toRotate, toState)
 
-        v = 0.5
+        v = constants.ROTATION_SPEED
         if left:
             self.setLeftSpeed(v)
             self.setRightSpeed(-v)
