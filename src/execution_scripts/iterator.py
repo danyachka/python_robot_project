@@ -1,6 +1,7 @@
 import sys
 import threading
 import json
+import traceback
 
 import sim
 import time
@@ -12,7 +13,7 @@ from src.ananlysing_scripts.analyser import Analyser
 from src.constants import gyro_dt, main_dt
 from src.execution_scripts.hardware_executor import HardwareExecutorEmulator, HardwareExecutor, HardwareExecutorModel
 
-from src.logger import log, logBlue, logError
+from src.logger import log, logBlue, logError, logCriticalError
 
 tag = "Iterator"
 
@@ -114,15 +115,18 @@ class Iterator:
             sim.simxFinish(self.clientId)
 
     def onException(self, exception: Exception, isMainThread):
+        trace = ''.join(traceback.format_exception(exception))
         resDict = {
-            constants.ERROR_MESSAGE: exception.args,
+            constants.ERROR_MESSAGE: trace,
             constants.IS_IN_MAIN: isMainThread,
             constants.CURRENT_DIRECTION: self.analyser.currentArucoDirectionAngle,
             constants.CURRENT_ID: self.analyser.currentArucoId,
             constants.CURRENT_ANGLE: self.analyser.absoluteAngle,
             constants.READ_IDS: self.analyser.scannedArucoIds,
-            constants.STATE: self.analyser.state.name
+            constants.STATE: str(self.analyser.state.name)
         }
+
+        logCriticalError(trace, "Exception")
 
         text = json.dumps(resDict)
 

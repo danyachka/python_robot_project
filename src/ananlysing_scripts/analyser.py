@@ -1,11 +1,11 @@
 import math
-import random
 import time
 
 from src import constants
-from src.ananlysing_scripts.listeners import (angleToCoords, getDeltaAngle, StepListener, GyroListener,
-                                              ArucoCloserListener, Moving2TargetListener)
+from src.ananlysing_scripts.listeners.listeners import (angleToCoords, getDeltaAngle, StepListener, GyroListener,
+                                                        ArucoCloserListener, Moving2TargetListener)
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
+from src.ananlysing_scripts.listeners.obstacle_scanning_listener import ObstacleScanningListener
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo, rad2Deg
@@ -65,9 +65,6 @@ class Analyser:
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
         log(f"Sonar read points = {self.iterationData.sonarData}", tag)
 
-        if random.randint(0, 10) == 5:
-            raise Exception("WTF Lol", "AHAHHAHA, exception")
-
         self.notifyListeners(self.iterationData, self.previousData)
 
     def onArucoFound(self):
@@ -75,7 +72,8 @@ class Analyser:
 
         # usual handling
         if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO,
-                          State.SCANNING_OBSTACLE, State.GETTING_OVER_AN_OBSTACLE}:
+                          State.SCANNING_OBSTACLE, State.GETTING_OVER_AN_OBSTACLE_SCANNING,
+                          State.GETTING_OVER_AN_OBSTACLE_FORWARD}:
             return
 
         for i, arucoId in enumerate(arucoResult.ids):
@@ -148,9 +146,6 @@ class Analyser:
             case State.GETTING_CLOSER2ARUCO:
                 self.registerListener(ArucoCloserListener(self))
                 self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
-            case State.GETTING_OVER_AN_OBSTACLE:
-                # self.registerListener()
-                pass
 
     def onGotClose2Aruco(self):
         if self.state != State.GETTING_CLOSER2ARUCO:
@@ -165,8 +160,8 @@ class Analyser:
         self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
 
     def onObstacleFound(self):
-        # TODO: obstacles borders found algorithm, create new GettingAroundObstacleListener, new State
-        ...
+        self.state = State.SCANNING_OBSTACLE
+        self.registerListener(ObstacleScanningListener(self))
 
     def registerListener(self, listener):
         self.__listeners.append(listener)

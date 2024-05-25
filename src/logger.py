@@ -26,3 +26,7 @@ def logBlue(text, tag=""):
 
 def logError(text, tag=""):
     print(f"{__getTheadName()}{tag:20}: {Fore.YELLOW}{text}{Fore.RESET}")
+
+
+def logCriticalError(text, tag=""):
+    print(f"{__getTheadName()}{tag:20}: {Fore.RED}{text}{Fore.RESET}")

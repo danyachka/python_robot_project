@@ -8,7 +8,7 @@ import cv2 as cv
 from abc import ABCMeta, abstractmethod
 
 from src.ananlysing_scripts.iteration_data import SonarInfo
-from src.ananlysing_scripts.listeners import RotationListener
+from src.ananlysing_scripts.listeners.listeners import RotationListener
 from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
 from src import constants
@@ -192,41 +192,41 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         if err1 != sim.simx_return_ok:
             logError("Error reading proximity sensor (front)", tag)
-            front = -1
+            front = constants.SONAR_DIST_NOTHING
         else:
             front = math.sqrt(front[0]**2 + front[1]**2 + front[2]**2)
-            if front < 10**-16:
-                front = -1
+            if front < constants.SONAR_FAKE_MIN:
+                front = constants.SONAR_DIST_NOTHING
 
         if err2 != sim.simx_return_ok:
             logError("Error reading proximity sensor (right)", tag)
-            right = -1
+            right = constants.SONAR_DIST_NOTHING
         else:
             right = math.sqrt(right[0]**2 + right[1]**2 + right[2]**2)
-            if right < 10**-16:
-                right = -1
+            if right < constants.SONAR_FAKE_MIN:
+                right = constants.SONAR_DIST_NOTHING
             elif right == front:
-                right = -1
+                right = constants.SONAR_DIST_NOTHING
 
         if err3 != sim.simx_return_ok:
             logError("Error reading proximity sensor (back)", tag)
-            back = -1
+            back = constants.SONAR_DIST_NOTHING
         else:
             back = math.sqrt(back[0]**2 + back[1]**2 + back[2]**2)
-            if back < 10**-16:
-                back = -1
+            if back < constants.SONAR_FAKE_MIN:
+                back = constants.SONAR_DIST_NOTHING
             elif back == right:
-                back = -1
+                back = constants.SONAR_DIST_NOTHING
 
         if err4 != sim.simx_return_ok:
             logError("Error reading proximity sensor (left)", tag)
-            left = -1
+            left = constants.SONAR_DIST_NOTHING
         else:
             left = math.sqrt(left[0]**2 + left[1]**2 + left[2]**2)
-            if left < 10**-16:
-                left = -1
+            if left < constants.SONAR_FAKE_MIN:
+                left = constants.SONAR_DIST_NOTHING
             elif left == back:
-                left = -1
+                left = constants.SONAR_DIST_NOTHING
 
         sonarData = SonarInfo(front, right, back, left)
 
