@@ -48,6 +48,7 @@ class ObstacleAvoidingListener(StepListener):
                                  stateAfterRotation=State.MOVING2TARGET)
         else:
             self.analyser.state = State.MOVING2TARGET
+            self.analyser.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
 
     def getObstacleSideData(self, iterationData: IterationData, innerSide=True) -> float:
         if self.isOnLeftSide and innerSide:
@@ -80,6 +81,7 @@ class ObstacleAvoidingListener(StepListener):
             return
 
         if self.analyser.state != State.GETTING_OVER_AN_OBSTACLE_SCANNING:
+            self.analyser.removeListener(self)
             return
 
         log(f"Counted, counter = {self.counter}", self.__class__.__name__)

@@ -5,6 +5,9 @@ from colorama import Fore
 from src import constants
 
 
+onlyImportant = False
+
+
 def __getTheadName():
     threadId = threading.get_ident()
 
@@ -16,11 +19,22 @@ def __getTheadName():
     return Fore.RED + "Unkn " + Fore.RESET
 
 
-def log(text, tag=""):
+def __deny(isImportant) -> bool:
+    if not onlyImportant:
+        return False
+
+    return not isImportant
+
+
+def log(text, tag="", isImportant=False):
+    if __deny(isImportant):
+        return
     print(f"{__getTheadName()}{tag:20}: {text}")
 
 
-def logBlue(text, tag=""):
+def logBlue(text, tag="", isImportant=False):
+    if __deny(isImportant):
+        return
     print(f"{__getTheadName()}{tag:20}: {Fore.BLUE}{text}{Fore.RESET}")
 
 

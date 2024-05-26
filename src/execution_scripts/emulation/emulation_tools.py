@@ -2,17 +2,26 @@ import math
 import time
 
 from src import constants
+from src.logger import log, logError
+
+
+last_dt = constants.gyro_dt
 
 
 class GyroscopeEmulator:
     def __init__(self):
         self.prev_angles = [0, 0, 0]
-        self.timestamp = time.time()
+        self.timestamp = 0
 
     def update(self, current_angles):
         current_time = time.time()
 
-        dt = constants.gyro_dt
+        dt = last_dt
+        if dt == 0 or self.timestamp == 0:
+            dt = constants.gyro_dt
+
+        if abs(dt - last_dt) > 0.001:
+            logError(f"Gyro emulator dt = {1/dt}, but analyser dt = {1/last_dt}", self.__class__.__name__)
         if dt == 0:
             return [0, 0, 0]
 

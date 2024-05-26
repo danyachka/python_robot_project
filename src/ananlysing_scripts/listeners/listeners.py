@@ -64,19 +64,17 @@ class Moving2TargetListener(StepListener):
 
     def endListening(self):
         self.analyser.onObstacleFound()
-        self.analyser.removeListener(self)
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):
         if self.analyser.state != State.MOVING2TARGET:
             return
 
         if self.analyser.currentArucoId != -1:
-            self.endListening()
             return
 
         # Check if robot is close enough
         if constants.SONAR_FAKE_MIN < iterationData.sonarData.front < constants.OBSTACLE_DISTANCE:
-            self.endListening()
+            self.analyser.onObstacleFound()
             return
 
 

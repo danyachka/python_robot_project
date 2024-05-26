@@ -2,6 +2,7 @@ import sys
 import threading
 import json
 import traceback
+from sre_parse import State
 
 import sim
 import time
@@ -74,7 +75,7 @@ class Iterator:
 
                 # if not isRotated:
                 #     isRotated = True
-                #     executor.rotate(720)
+                #     self.analyser.rotate(angle=90, stateAfterRotation=2)
 
                 # waite util next tick
                 elapsed_time = time.time() - iterationStartTime
@@ -83,7 +84,7 @@ class Iterator:
 
                 iterationTime = time.time() - iterationStartTime
                 logBlue(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n',
-                        "Iterator (Main)")
+                        "Iterator (Main)", isImportant=True)
         except Exception as e:
             self.onException(e, True)
 
@@ -104,7 +105,7 @@ class Iterator:
 
                 iterationTime = time.time() - iterationStartTime
                 logBlue(f'Gyro iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}',
-                        "Iterator (Gyro)")
+                        "Iterator (Gyro)", isImportant=False)
         except Exception as e:
             self.onException(e, False)
 

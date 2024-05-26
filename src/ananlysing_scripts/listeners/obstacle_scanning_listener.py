@@ -43,12 +43,12 @@ class ObstacleScanningListener(StepListener):
         newListener.moveForward()
 
     def calcMinObstacleDistance(self, angle) -> float:
-        d = constants.OBSTACLE_DISTANCE
-        if not isAngleClose(angle, 0):
-            d = constants.OBSTACLE_DISTANCE / math.cos(angle)
-
-        if d > 1.2 * constants.OBSTACLE_DISTANCE:
-            d = 1.2 * constants.OBSTACLE_DISTANCE
+        d = 1.4 * constants.OBSTACLE_DISTANCE
+        # if not isAngleClose(angle, 0):
+        #     d = constants.OBSTACLE_DISTANCE / math.cos(angle)
+        #
+        # if d > 1.2 * constants.OBSTACLE_DISTANCE:
+        #     d = 1.2 * constants.OBSTACLE_DISTANCE
         return d
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):

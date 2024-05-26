@@ -26,7 +26,12 @@ def parseDictionary() -> tuple[dict[int, float], int]:
 
 def main():
     d, f = parseDictionary()
+
+    isEmulation = True
+    onlyImportantLogs = True
+
     iterator = Iterator(True, d, f)
+    logger.onlyImportant = onlyImportantLogs
     iterator.start()
 
 

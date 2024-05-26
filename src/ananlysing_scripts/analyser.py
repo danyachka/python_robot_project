@@ -6,6 +6,7 @@ from src.ananlysing_scripts.listeners.listeners import (angleToCoords, getDeltaA
                                                         ArucoCloserListener, Moving2TargetListener)
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.ananlysing_scripts.listeners.obstacle_scanning_listener import ObstacleScanningListener
+from src.execution_scripts.emulation import emulation_tools
 from src.execution_scripts.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo, rad2Deg
@@ -38,7 +39,8 @@ class Analyser:
     absoluteAngle: float = 0.
     currentArucoDirectionAngle: float = 0.
 
-    gyroTimeStamp = time.time()
+    gyroTimeStamp = 0
+    gyro_dt = constants.gyro_dt
 
     def __init__(self, executor: HardwareExecutorModel, arucoDict: dict[int, float], finishId: int):
         self.hardwareExecutor = executor
@@ -51,7 +53,9 @@ class Analyser:
 
     def onIteration(self):
         logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, "
-                f"{len(self.__gyroListeners)} and {len(self.__listeners)}", tag)
+                f"{len(self.__gyroListeners)} and {len(self.__listeners)}", tag, isImportant=True)
+        log(f"Gyro Hz = {1/self.gyro_dt}, abs = {self.absoluteAngle}, direction = {self.currentArucoDirectionAngle}",
+            isImportant=True)
         self.previousData = self.iterationData
         self.iterationData = IterationData()
 
@@ -71,9 +75,7 @@ class Analyser:
         arucoResult: ArucoInfo = self.iterationData.arucoResult
 
         # usual handling
-        if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO,
-                          State.SCANNING_OBSTACLE, State.GETTING_OVER_AN_OBSTACLE_SCANNING,
-                          State.GETTING_OVER_AN_OBSTACLE_FORWARD}:
+        if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO}:
             return
 
         for i, arucoId in enumerate(arucoResult.ids):
@@ -104,10 +106,14 @@ class Analyser:
     def onGyroIteration(self):
         currentTime = time.time()
         # dt = currentTime - self.gyroTimeStamp
-        dt = constants.gyro_dt
+        self.gyro_dt = currentTime - self.gyroTimeStamp
+        if self.gyro_dt == 0 or self.gyroTimeStamp == 0:
+            self.gyro_dt = constants.gyro_dt
+
+        emulation_tools.last_dt = self.gyro_dt
 
         self.iterationData.gyroData = self.hardwareExecutor.readGyro()
-        rotated = dt * self.iterationData.gyroData[2]
+        rotated = self.gyro_dt * self.iterationData.gyroData[2]
 
         self.iterationData.rotated += rotated
         self.absoluteAngle += rotated
@@ -116,9 +122,10 @@ class Analyser:
         if self.absoluteAngle >= 360:
             self.absoluteAngle = self.absoluteAngle % 360
 
-        log(f"Gyro data = {self.iterationData.gyroData}, angle = {self.absoluteAngle}", tag)
+        log(f"Gyro data = {self.iterationData.gyroData}, angle = {self.absoluteAngle}, "
+            f"direction = {self.currentArucoDirectionAngle}", tag)
 
-        self.__notifyGyroListeners(self.iterationData.gyroData, dt)
+        self.__notifyGyroListeners(self.iterationData.gyroData, self.gyro_dt)
         self.gyroTimeStamp = currentTime
 
     def rotate(self, *, angle=0., toRotate=0., stateAfterRotation):
@@ -161,6 +168,8 @@ class Analyser:
 
     def onObstacleFound(self):
         self.state = State.SCANNING_OBSTACLE
+        self.hardwareExecutor.setSpeed(0)
+
         self.registerListener(ObstacleScanningListener(self))
 
     def registerListener(self, listener):
