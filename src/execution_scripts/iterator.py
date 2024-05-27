@@ -112,6 +112,8 @@ class Iterator:
     def onDestroy(self):
         cv.destroyAllWindows()
 
+        self.executor.onDestroy()
+
         if self.isEmulation:
             sim.simxFinish(self.clientId)
 

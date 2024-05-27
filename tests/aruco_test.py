@@ -6,19 +6,28 @@ from src.ananlysing_scripts.camera_script import ArucoDetector
 
 
 def main():
-    path = Path(__file__).parent.parent.joinpath("data/img_2.png")
+    path = Path(__file__).parent.parent.joinpath("data")
 
-    img = cv.imread(str(path))
+    cameraMatrix = np.array([[580.1665156, 0., 325.59939736],
+                             [0., 579.40992364, 232.22784327],
+                             [0., 0., 1.]])
 
-    cameraMatrix = np.array([[1.27358341e+03, 0.00000000e+00, 3.00942489e+02],
-                             [0.00000000e+00, 1.26663343e+03, 2.33213114e+02],
-                             [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]])
-
-    distCfs = np.array([[7.43051630e-02, -5.16983657e+00, -1.01402024e-03, -2.80294514e-04, 9.13089594e+01]])
+    distCfs = np.array([[-4.62821723e-01,  5.81112136e-01,  2.66871651e-03,  3.02822923e-04, -8.95088570e-01]])
 
     arucoDetector = ArucoDetector(cameraMatrix, distCfs, True)
 
-    arucoDetector.onImage(img)
+    for i in range(4):
+        prefix = 'img.png'
+        if i == 1:
+            prefix = 'img_1.png'
+        elif i == 2:
+            prefix = 'img_2.png'
+        elif i == 3:
+            prefix = "aruco.png"
+
+        img = cv.imread(str(path.joinpath(prefix)))
+
+        arucoDetector.onImage(img)
 
 
 if __name__ == '__main__':

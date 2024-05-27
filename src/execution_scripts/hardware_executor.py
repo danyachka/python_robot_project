@@ -5,7 +5,7 @@ import numpy as np
 import sim
 import cv2 as cv
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta, abstractmethod, ABC
 
 from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners.listeners import RotationListener
@@ -64,9 +64,13 @@ class HardwareExecutorModel:
     def rotate(self, toRotate, degrees, toState) -> None:
         pass
 
+    @abstractmethod
+    def onDestroy(self) -> None:
+        pass
+
 
 # Should execute commands in simulation
-class HardwareExecutorEmulator(HardwareExecutorModel):
+class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
 
     clientId = 0
 
@@ -278,15 +282,38 @@ class HardwareExecutorEmulator(HardwareExecutorModel):
 
         self.analyser.registerGyroListener(listener)
 
+    def onDestroy(self) -> None:
+        pass
+
 
 # Should execute commands with actual hardware
-class HardwareExecutor(HardwareExecutorModel):
+class HardwareExecutor(HardwareExecutorModel, ABC):
+
+    cap = None
+
+    cameraMatrix = np.array([[580.1665156, 0., 325.59939736],
+                             [0., 579.40992364, 232.22784327],
+                             [0., 0., 1.]])
+
+    distCfs = np.array([[-4.62821723e-01, 5.81112136e-01, 2.66871651e-03, 3.02822923e-04, -8.95088570e-01]])
 
     def __init__(self):
         super().__init__()
 
+        cap = cv.VideoCapture(0)
+
+        if not cap.isOpened():
+            raise Exception("Failed to open camera")
+
     def readImage(self) -> np.ndarray:
-        pass
+
+        ret, image = self.cap.read()
+
+        if not ret:
+            logError("Failed to capture image", tag)
+            return None
+
+        return image
 
     def readGyro(self) -> [float, float, float]:
         pass
@@ -308,3 +335,6 @@ class HardwareExecutor(HardwareExecutorModel):
 
     def rotate(self, toRotate, degrees, toState) -> None:
         pass
+
+    def onDestroy(self) -> None:
+        self.cap.release()
