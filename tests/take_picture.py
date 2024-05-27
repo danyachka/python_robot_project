@@ -3,7 +3,7 @@ import numpy as np
 import cv2 as cv
 
 
-def main():
+def getImageEmu() -> np.ndarray:
     sim.simxFinish(-1)
 
     clientID = sim.simxStart('127.0.0.1', 19999, True,
@@ -14,12 +14,29 @@ def main():
                                                                  sim.simx_opmode_oneshot_wait)
 
     image = np.asarray(image).astype(np.uint8)
-
     image = image.reshape([resolution[1], resolution[0], 3])
     image = np.flip(image, 0)
     image = cv.cvtColor(image, cv.COLOR_RGB2BGR)
+    return image
 
-    cv.imwrite("../data/chess_emulation/3.jpg", image)
+
+def getImageReal() -> np.ndarray:
+    cap = cv.VideoCapture(0)
+    if not cap.isOpened():
+        print("Не удалось открыть камеру")
+        exit()
+
+    ret, image = cap.read()
+    cap.release()
+
+    return image
+
+
+def main():
+    image = getImageReal()
+
+    # /data/chess_real/1...n
+    cv.imwrite("../data/chess_real/1.jpg", image)
 
 
 if __name__ == '__main__':

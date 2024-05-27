@@ -49,7 +49,7 @@ def main():
         cv.imshow('img', image)
         cv.waitKey(500)
 
-        time.sleep(1)
+        time.sleep(2)
 
     cv.destroyAllWindows()
 
