@@ -36,10 +36,10 @@ def getImageReal() -> np.ndarray:
 
 def main():
     i = input("Number of image: ")
-    image = getImageReal()
+    image = getImageEmu()
 
     # /data/chess_real/1...n
-    path = Path(__file__).parent.parent.joinpath("data").joinpath("chess_real").joinpath(f"{i}.jpg")
+    path = Path(__file__).parent.parent.joinpath("data").joinpath("chess_emulation").joinpath(f"{i}.jpg")
     cv.imwrite(str(path), image)
 
 

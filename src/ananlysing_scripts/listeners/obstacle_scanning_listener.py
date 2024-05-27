@@ -4,6 +4,7 @@ from src import constants
 from src.ananlysing_scripts.iteration_data import State, IterationData
 from src.ananlysing_scripts.listeners.listeners import angleToCoords, getDeltaAngle, isAngleClose, StepListener
 from src.ananlysing_scripts.listeners.obstacle_avoiding_listener import ObstacleAvoidingListener
+from src.logger import log
 
 
 class ObstacleScanningListener(StepListener):
@@ -26,6 +27,8 @@ class ObstacleScanningListener(StepListener):
     def goOverAnObstacle(self, angle):
         angle = self.analyser.currentArucoDirectionAngle + angle
         angle = angleToCoords(angle)
+
+        log(f"Obstacle scanning ended", self.__class__.__name__, isImportant=True)
 
         if not isAngleClose(self.analyser.absoluteAngle, angle):
             self.analyser.rotate(toRotate=angle, stateAfterRotation=State.SCANNING_OBSTACLE)

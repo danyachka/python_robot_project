@@ -38,6 +38,7 @@ class Analyser:
 
     absoluteAngle: float = 0.
     currentArucoDirectionAngle: float = 0.
+    lastMeasuredArucoDistance: float = float('inf')
 
     gyroTimeStamp = 0
     gyro_dt = constants.gyro_dt
@@ -85,6 +86,9 @@ class Analyser:
             if arucoId not in self.arucoDict and arucoId != self.finishId:
                 continue
 
+            if arucoResult.normals[i] is None:
+                continue
+
             if arucoId != self.finishId:
                 angle = self.arucoDict[arucoId]
             else:
@@ -95,7 +99,9 @@ class Analyser:
                                               math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
 
             print(angleToRotate)
-            self.currentArucoDirectionAngle = arucoResult.angles[i] + angle
+            self.currentArucoDirectionAngle = angleToCoords(arucoResult.angles[i] + angle)
+            self.lastMeasuredArucoDistance = arucoResult.distances[i]
+
             self.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
 
             self.scannedArucoIds.append(arucoId)

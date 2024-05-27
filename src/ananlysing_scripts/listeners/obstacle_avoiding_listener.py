@@ -43,7 +43,9 @@ class ObstacleAvoidingListener(StepListener):
     def endListening(self):
         self.analyser.removeListener(self)
 
-        if not isAngleClose(self.angleEnd, self.analyser.absoluteAngle):
+        log(f"Obstacle avoiding ended", self.__class__.__name__, isImportant=True)
+
+        if not isAngleClose(self.analyser.currentArucoDirectionAngle, self.analyser.absoluteAngle):
             self.analyser.rotate(toRotate=self.analyser.currentArucoDirectionAngle,
                                  stateAfterRotation=State.MOVING2TARGET)
         else:

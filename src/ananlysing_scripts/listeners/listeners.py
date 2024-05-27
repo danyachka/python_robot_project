@@ -89,12 +89,19 @@ class ArucoCloserListener(StepListener):
         self.analyser.onGotClose2Aruco()
         self.analyser.removeListener(self)
 
+    def isCloseEnough(self, iterationData: IterationData) -> bool:
+        if self.analyser.lastMeasuredArucoDistance < constants.ARUCO_DISTANCE:
+            return True
+
+        return (iterationData.sonarData.front < constants.ARUCO_DISTANCE and
+                self.analyser.lastMeasuredArucoDistance < constants.ARUCO_CAMERA_DISTANCE)
+
     def onStep(self, iterationData: IterationData, previousData: IterationData):
         if self.analyser.currentArucoId == -1:
             self.endListening()
 
         # Check if robot is close enough
-        if constants.SONAR_FAKE_MIN < iterationData.sonarData.front < constants.ARUCO_DISTANCE:
+        if self.isCloseEnough(iterationData):
             self.endListening()
             return
 
@@ -108,7 +115,11 @@ class ArucoCloserListener(StepListener):
                 angle = self.analyser.arucoDict[arucoId]
             else:
                 angle = 0
-            self.analyser.currentArucoDirectionAngle = arucoResult.angles[i] + angle
+
+            self.analyser.lastMeasuredArucoDistance = arucoResult.distances[i]
+
+            if self.analyser.lastMeasuredArucoDistance > constants.ARUCO_CAMERA_DISTANCE:
+                self.analyser.currentArucoDirectionAngle = arucoResult.angles[i] + angle
 
             angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
                                               math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
