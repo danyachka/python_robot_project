@@ -33,10 +33,11 @@ def getImageReal() -> np.ndarray:
 
 
 def main():
+    i = input("Number of image: ")
     image = getImageReal()
 
     # /data/chess_real/1...n
-    cv.imwrite("../data/chess_real/1.jpg", image)
+    cv.imwrite(f"../data/chess_real/{i}.jpg", image)
 
 
 if __name__ == '__main__':
