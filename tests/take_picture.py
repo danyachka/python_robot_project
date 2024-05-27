@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import sim
 import numpy as np
 import cv2 as cv
@@ -37,7 +39,8 @@ def main():
     image = getImageReal()
 
     # /data/chess_real/1...n
-    cv.imwrite(f"../data/chess_real/{i}.jpg", image)
+    path = Path(__file__).parent.parent.joinpath("data").joinpath("chess_real").joinpath(f"{i}.jpg")
+    cv.imwrite(str(path), image)
 
 
 if __name__ == '__main__':
