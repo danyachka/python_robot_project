@@ -1,4 +1,4 @@
-from execution_scripts.iterator import Iterator
+from src.execution_scripts import Iterator
 from pathlib import Path
 import json
 from src import constants

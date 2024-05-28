@@ -2,7 +2,6 @@ import sys
 import threading
 import json
 import traceback
-from sre_parse import State
 
 import numpy as np
 
@@ -15,9 +14,9 @@ from matplotlib import pyplot as plt
 from src import constants
 from src.ananlysing_scripts.analyser import Analyser
 from src.constants import gyro_dt, main_dt
-from src.execution_scripts.hardware_executor import HardwareExecutorEmulator, HardwareExecutor, HardwareExecutorModel
+from src.execution_scripts import HardwareExecutorEmulator, HardwareExecutor, HardwareExecutorModel
 
-from src.logger import log, logBlue, logError, logCriticalError
+from src.logger import logBlue, logError, logCriticalError
 
 tag = "Iterator"
 

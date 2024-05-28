@@ -4,6 +4,7 @@ import numpy as np
 
 from src.ananlysing_scripts.camera_script import ArucoDetector
 
+
 def emuTest(path):
     cameraMatrix = np.array([[580.1665156, 0., 325.59939736],
                              [0., 579.40992364, 232.22784327],
