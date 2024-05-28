@@ -118,8 +118,8 @@ class Analyser:
 
         emulation_tools.last_dt = self.gyro_dt
 
-        self.iterationData.gyroData = self.hardwareExecutor.readGyro()
-        rotated = self.gyro_dt * self.iterationData.gyroData[2]
+        self.iterationData.gyroData = self.hardwareExecutor.readGyro(self.gyro_dt)
+        rotated = self.iterationData.gyroData
 
         self.iterationData.rotated += rotated
         self.absoluteAngle += rotated

@@ -25,9 +25,23 @@ class HardwareExecutorModel:
 
     distCfs = None
 
+    gyroKalmanFilter = None
+
     @abstractmethod
     def __init__(self):
-        pass
+        self.__initializeKalmanFilter()
+
+    def __initializeKalmanFilter(self):
+        kf = cv.KalmanFilter(2, 1)
+        kf.measurementMatrix = np.array([[1, 0]], np.float32)
+        kf.transitionMatrix = np.array([[1, 1],
+                                        [0, 1]], np.float32)
+        kf.processNoiseCov = np.eye(2, dtype=np.float32) * 1e-4
+        kf.measurementNoiseCov = np.eye(1, dtype=np.float32) * 1e-1
+        kf.errorCovPost = np.eye(2, dtype=np.float32) * 0.1
+        kf.statePost = np.zeros((2, 1), np.float32)
+
+        self.gyroKalmanFilter = kf
 
     def setAnalyser(self, analyser):
         self.analyser = analyser
@@ -36,8 +50,19 @@ class HardwareExecutorModel:
     def readImage(self) -> np.ndarray:
         pass
 
+    def readGyro(self, dt) -> float:
+
+        data = self.readRawGyro()[2]
+
+        self.gyroKalmanFilter.transitionMatrix[0, 1] = dt
+        self.gyroKalmanFilter.correct(data)
+
+        prediction = self.gyroKalmanFilter.predict()
+
+        return prediction
+
     @abstractmethod
-    def readGyro(self) -> [float, float, float]:
+    def readRawGyro(self) -> [float, float, float]:
         pass
 
     @abstractmethod
@@ -154,7 +179,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         log(f'Sonar_l handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}, '
             f'{self.sonarHandle_l}', tag)
 
-        self.readGyro()
+        self.readRawGyro()
 
     def readImage(self) -> np.ndarray:
         res, resolution, image = sim.simxGetVisionSensorImage(
@@ -178,7 +203,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Failed to capture image", tag)
             return None
 
-    def readGyro(self) -> [float, float, float]:
+    def readRawGyro(self) -> [float, float, float]:
         res, euler_angles = (
             sim.simxGetObjectOrientation(self.clientId, self.robot_handle, -1, sim.simx_opmode_buffer))
 
@@ -315,7 +340,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         return image
 
-    def readGyro(self) -> [float, float, float]:
+    def readRawGyro(self) -> [float, float, float]:
         pass
 
     def readSonarData(self) -> SonarInfo:

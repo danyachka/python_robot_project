@@ -43,7 +43,7 @@ class IterationData:
 
     cameraImage: np.ndarray = None
 
-    gyroData: [float, float, float] = [0, 0, 0]
+    gyroData: float = 0
 
     rotated: float = 0
 
