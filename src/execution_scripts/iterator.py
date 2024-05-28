@@ -4,10 +4,13 @@ import json
 import traceback
 from sre_parse import State
 
+import numpy as np
+
 import sim
 import time
 import cv2 as cv
 from threading import Thread
+from matplotlib import pyplot as plt
 
 from src import constants
 from src.ananlysing_scripts.analyser import Analyser
@@ -22,6 +25,8 @@ tag = "Iterator"
 class Iterator:
     isEmulation: bool
 
+    buildPlot: bool
+
     clientId = 0
 
     simTime = 0
@@ -30,8 +35,12 @@ class Iterator:
 
     executor: HardwareExecutorModel
 
-    def __init__(self, isEmulation, arucoDict, finish):
+    def __init__(self, isEmulation, buildPlot, arucoDict, finish):
         self.isEmulation = isEmulation
+        self.buildPlot = buildPlot
+
+        if buildPlot:
+            self.plotData = np.zeros((150, 2))
 
         if isEmulation:
             self.__startSimulation()
@@ -63,6 +72,9 @@ class Iterator:
         self.startMainIteration()
 
     def startMainIteration(self):
+        counter = 0
+        startTime = time.time()
+
         try:
             constants.mainThreadId = threading.get_ident()
 
@@ -76,6 +88,15 @@ class Iterator:
                 # if not isRotated:
                 #     isRotated = True
                 #     self.analyser.rotate(angle=90, stateAfterRotation=2)
+
+                if self.buildPlot:
+                    if counter == len(self.plotData):
+                        self.showPlot()
+                        break
+
+                    self.plotData[counter, 1] = self.analyser.absoluteAngle
+                    self.plotData[counter, 0] = time.time() - startTime
+                    counter += 1
 
                 # waite util next tick
                 elapsed_time = time.time() - iterationStartTime
@@ -136,4 +157,11 @@ class Iterator:
         file = open("data/exception_res.json", "w")
         file.write(text)
         file.close()
+
+    def showPlot(self):
+        plt.figure(figsize=(10, 6))
+        plt.plot(self.plotData, "-", color="blue")
+        plt.title("Absolute angles")
+
+        plt.show()
 

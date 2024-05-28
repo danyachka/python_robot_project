@@ -113,7 +113,7 @@ class ArucoDetector:
 
         cv.imshow("Camera image", image)
         if self.isTest:
-            cv.waitKey(10_000)
+            cv.waitKey(5_000)
         else:
             cv.waitKey(1)
 

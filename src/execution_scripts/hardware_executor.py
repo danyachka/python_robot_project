@@ -33,12 +33,12 @@ class HardwareExecutorModel:
 
     def __initializeKalmanFilter(self):
         kf = cv.KalmanFilter(2, 1)
-        kf.measurementMatrix = np.array([[1, 0]], np.float32)
-        kf.transitionMatrix = np.array([[1, 1],
+        kf.measurementMatrix = np.array([[0, 1]], np.float32)
+        kf.transitionMatrix = np.array([[1, 0],
                                         [0, 1]], np.float32)
-        kf.processNoiseCov = np.eye(2, dtype=np.float32) * 1e-4
-        kf.measurementNoiseCov = np.eye(1, dtype=np.float32) * 1e-1
-        kf.errorCovPost = np.eye(2, dtype=np.float32) * 0.1
+        kf.processNoiseCov = np.eye(2, dtype=np.float32) * 1e-5
+        kf.measurementNoiseCov = np.eye(1, dtype=np.float32) * 1e-5
+        kf.errorCovPost = np.eye(2, dtype=np.float32) * 1e-1
         kf.statePost = np.zeros((2, 1), np.float32)
 
         self.gyroKalmanFilter = kf
@@ -51,13 +51,12 @@ class HardwareExecutorModel:
         pass
 
     def readGyro(self, dt) -> float:
-
         data = self.readRawGyro()[2]
 
         self.gyroKalmanFilter.transitionMatrix[0, 1] = dt
-        self.gyroKalmanFilter.correct(data)
+        self.gyroKalmanFilter.correct(np.array(data, np.float32))
 
-        prediction = self.gyroKalmanFilter.predict()
+        prediction = self.gyroKalmanFilter.predict()[0][0] * dt
 
         return prediction
 
@@ -96,7 +95,6 @@ class HardwareExecutorModel:
 
 # Should execute commands in simulation
 class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
-
     clientId = 0
 
     frontLeftWheel = None
@@ -120,7 +118,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
                              [0., 772.28979442, 237.61600108],
                              [0., 0., 1.]])
 
-    distCfs = np.array([[-9.28420136e-03,  1.41950687e-01, -6.17753741e-04, -2.64559643e-04, -6.80797471e-01]])
+    distCfs = np.array([[-9.28420136e-03, 1.41950687e-01, -6.17753741e-04, -2.64559643e-04, -6.80797471e-01]])
 
     def __init__(self, clientId):
         super().__init__()
@@ -203,6 +201,12 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Failed to capture image", tag)
             return None
 
+    def readGyro(self, dt) -> float:
+
+        data = self.readRawGyro()[2] * dt
+
+        return data
+
     def readRawGyro(self) -> [float, float, float]:
         res, euler_angles = (
             sim.simxGetObjectOrientation(self.clientId, self.robot_handle, -1, sim.simx_opmode_buffer))
@@ -223,7 +227,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Error reading proximity sensor (front)", tag)
             front = constants.SONAR_DIST_NOTHING
         else:
-            front = math.sqrt(front[0]**2 + front[1]**2 + front[2]**2)
+            front = math.sqrt(front[0] ** 2 + front[1] ** 2 + front[2] ** 2)
             if front < constants.SONAR_FAKE_MIN:
                 front = constants.SONAR_DIST_NOTHING
 
@@ -231,7 +235,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Error reading proximity sensor (right)", tag)
             right = constants.SONAR_DIST_NOTHING
         else:
-            right = math.sqrt(right[0]**2 + right[1]**2 + right[2]**2)
+            right = math.sqrt(right[0] ** 2 + right[1] ** 2 + right[2] ** 2)
             if right < constants.SONAR_FAKE_MIN:
                 right = constants.SONAR_DIST_NOTHING
             elif right == front:
@@ -241,7 +245,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Error reading proximity sensor (back)", tag)
             back = constants.SONAR_DIST_NOTHING
         else:
-            back = math.sqrt(back[0]**2 + back[1]**2 + back[2]**2)
+            back = math.sqrt(back[0] ** 2 + back[1] ** 2 + back[2] ** 2)
             if back < constants.SONAR_FAKE_MIN:
                 back = constants.SONAR_DIST_NOTHING
             elif back == right:
@@ -251,7 +255,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             logError("Error reading proximity sensor (left)", tag)
             left = constants.SONAR_DIST_NOTHING
         else:
-            left = math.sqrt(left[0]**2 + left[1]**2 + left[2]**2)
+            left = math.sqrt(left[0] ** 2 + left[1] ** 2 + left[2] ** 2)
             if left < constants.SONAR_FAKE_MIN:
                 left = constants.SONAR_DIST_NOTHING
             elif left == back:
@@ -313,14 +317,13 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
 
 # Should execute commands with actual hardware
 class HardwareExecutor(HardwareExecutorModel, ABC):
-
     cap = None
 
-    cameraMatrix = np.array([[580.1665156, 0., 325.59939736],
-                             [0., 579.40992364, 232.22784327],
+    cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
+                             [0., 584.82488533, 234.52954564],
                              [0., 0., 1.]])
 
-    distCfs = np.array([[-4.62821723e-01, 5.81112136e-01, 2.66871651e-03, 3.02822923e-04, -8.95088570e-01]])
+    distCfs = np.array([[-0.39671064,  0.0474044,   0.00244292, -0.00081249,  0.56456562]])
 
     def __init__(self):
         super().__init__()

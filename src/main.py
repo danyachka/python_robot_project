@@ -29,8 +29,9 @@ def main():
 
     isEmulation = True
     onlyImportantLogs = True
+    buildPlot = True
 
-    iterator = Iterator(True, d, f)
+    iterator = Iterator(isEmulation, buildPlot, d, f)
     logger.onlyImportant = onlyImportantLogs
     iterator.start()
 
