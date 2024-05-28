@@ -29,7 +29,7 @@ def emuTest(path):
 
 
 def realTest(path):
-    path.joinpath("real_aruco")
+    path = path.joinpath("real_aruco")
 
     count = int(input('count?'))
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
@@ -42,8 +42,10 @@ def realTest(path):
 
     for i in range(1, count + 1):
         prefix = f"{i}.jpg"
+        p = str(path.joinpath(prefix))
+        print(p)
 
-        img = cv.imread(str(path.joinpath(prefix)))
+        img = cv.imread(p)
 
         arucoDetector.onImage(img)
 

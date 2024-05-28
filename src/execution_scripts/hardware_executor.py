@@ -9,7 +9,7 @@ from abc import ABCMeta, abstractmethod, ABC
 
 from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners.listeners import RotationListener
-from src.execution_scripts import GyroscopeEmulator
+from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
 from src import constants
 

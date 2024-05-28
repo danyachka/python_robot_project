@@ -1,4 +1,4 @@
-from src.execution_scripts import Iterator
+from src.execution_scripts.iterator import Iterator
 from pathlib import Path
 import json
 from src import constants
@@ -29,7 +29,7 @@ def main():
 
     isEmulation = True
     onlyImportantLogs = True
-    buildPlot = True
+    buildPlot = False
 
     iterator = Iterator(isEmulation, buildPlot, d, f)
     logger.onlyImportant = onlyImportantLogs
