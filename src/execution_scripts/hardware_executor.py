@@ -2,8 +2,8 @@ import math
 import time
 
 import numpy as np
-import sim
 import cv2 as cv
+# from mpu6050 import mpu6050
 
 from abc import ABCMeta, abstractmethod, ABC
 
@@ -12,6 +12,9 @@ from src.ananlysing_scripts.listeners.listeners import RotationListener
 from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
 from src.logger import log, logError
 from src import constants
+
+if constants.isEmulation:
+    import sim
 
 tag = "HardwareExecutor"
 
@@ -319,6 +322,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
 class HardwareExecutor(HardwareExecutorModel, ABC):
     cap = None
 
+    gyroSensor = None
+
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
                              [0., 584.82488533, 234.52954564],
                              [0., 0., 1.]])
@@ -328,9 +333,11 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     def __init__(self):
         super().__init__()
 
-        cap = cv.VideoCapture(0)
+        self.cap = cv.VideoCapture(0)
 
-        if not cap.isOpened():
+        self.gyroSensor = mpu6050(0x68)
+
+        if not self.cap.isOpened():
             raise Exception("Failed to open camera")
 
     def readImage(self) -> np.ndarray:
@@ -343,8 +350,18 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         return image
 
+    def readGyro(self, dt) -> float:
+        data = self.readRawGyro()[2]
+
+        return data
+
     def readRawGyro(self) -> [float, float, float]:
-        pass
+        data = self.gyroSensor.get_gyro_data()
+
+        if data is None:
+            return [0, 0, 0]
+
+        return [data['x'], data['y'], data['z']]
 
     def readSonarData(self) -> SonarInfo:
         pass

@@ -1,4 +1,3 @@
-from src.execution_scripts.iterator import Iterator
 from pathlib import Path
 import json
 from src import constants
@@ -24,15 +23,28 @@ def parseDictionary() -> tuple[dict[int, float], int]:
     return angles, finish
 
 
+def parseConfiguration():
+
+    path = Path(__file__).parent.parent.joinpath("data").joinpath("configuration.json")
+    file = open(str(path), "r")
+    text = file.read()
+
+    d = json.loads(text)
+
+    constants.isEmulation = d[constants.IS_EMULATION]
+    constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
+    constants.buildPlot = d[constants.BUILD_PLOT]
+
+
 def main():
     d, f = parseDictionary()
 
-    isEmulation = True
-    onlyImportantLogs = True
-    buildPlot = False
+    parseConfiguration()
 
-    iterator = Iterator(isEmulation, buildPlot, d, f)
-    logger.onlyImportant = onlyImportantLogs
+    from src.execution_scripts.iterator import Iterator
+
+    iterator = Iterator(constants.isEmulation, constants.isEmulation, d, f)
+    logger.onlyImportant = constants.onlyImportantLogs
     iterator.start()
 
 

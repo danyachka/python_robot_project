@@ -1,11 +1,11 @@
 from pathlib import Path
 
-import sim
 import numpy as np
 import cv2 as cv
 
 
 def getImageEmu() -> np.ndarray:
+    import sim
     sim.simxFinish(-1)
 
     clientID = sim.simxStart('127.0.0.1', 19999, True,

@@ -64,3 +64,13 @@ STATE = "STATE"
 ERROR_MESSAGE = "ERROR_MESSAGE"
 IS_IN_MAIN = "IS_IN_MAIN"
 
+
+# configuration
+IS_EMULATION = "IS_EMULATION"
+PRINT_ONLY_IMPORTANT_LOGS = "PRINT_ONLY_IMPORTANT_LOGS"
+BUILD_PLOT = "BUILD_PLOT"
+
+# read configuration (Values will be replaced by config)
+isEmulation: bool
+onlyImportantLogs: bool
+buildPlot: bool

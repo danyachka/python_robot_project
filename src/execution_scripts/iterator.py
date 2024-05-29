@@ -5,7 +5,6 @@ import traceback
 
 import numpy as np
 
-import sim
 import time
 import cv2 as cv
 from threading import Thread
@@ -17,6 +16,9 @@ from src.constants import gyro_dt, main_dt
 from src.execution_scripts.hardware_executor import HardwareExecutorEmulator, HardwareExecutor, HardwareExecutorModel
 
 from src.logger import logBlue, logError, logCriticalError
+
+if constants.isEmulation:
+    import sim
 
 tag = "Iterator"
 
