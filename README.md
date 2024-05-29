@@ -18,12 +18,14 @@ simRemoteApi.start(19999)
 #### Example of configuration.json:
 ```Json
 {
- "IS_EMULATION": true,
- "PRINT_ONLY_IMPORTANT_LOGS": true,
- "BUILD_PLOT": false,
- "USE_FLASK": true,
- "FLASK_DELAY": 0.2,
- "ARUCO_DICTIONARY": "DICT_4X4_1000"
+  "IS_EMULATION": true,
+  "PRINT_ONLY_IMPORTANT_LOGS": true,
+  "BUILD_PLOT": false,
+  "USE_FLASK": false,
+  "FLASK_DELAY": 0.2,
+
+  "ARUCO_DICTIONARY": "DICT_5X5_1000",
+  "ARUCO_SIZE": 20
 }
 ```
 

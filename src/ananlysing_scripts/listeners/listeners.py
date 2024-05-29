@@ -119,7 +119,7 @@ class ArucoCloserListener(StepListener):
             self.analyser.lastMeasuredArucoDistance = arucoResult.distances[i]
 
             if self.analyser.lastMeasuredArucoDistance > constants.ARUCO_CAMERA_DISTANCE:
-                self.analyser.currentArucoDirectionAngle = arucoResult.angles[i] + angle
+                self.analyser.currentArucoDirectionAngle = angleToCoords(arucoResult.angles[i] + angle)
 
             angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
                                               math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
@@ -146,7 +146,7 @@ class RotationListener(GyroListener):
         self.angleToRotate = angleToRotate
         self.toState = toState
 
-        log(f"Angle to rotate = {angleToRotate}", "RotationListener")
+        log(f"Angle to rotate = {angleToRotate}", "RotationListener", isImportant=True)
 
     def onStep(self, gyroData, absoluteAngle, directionAngle, dt):
         log(f'RotationAngle = {absoluteAngle}, subtraction = {abs(self.angleToRotate - absoluteAngle)}'

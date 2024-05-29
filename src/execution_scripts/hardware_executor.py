@@ -137,19 +137,19 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         log(f'frontRightWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backLeftWheel = sim.simxGetObjectHandle(
-            clientId, './back_right_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './back_left_wheel', sim.simx_opmode_oneshot_wait)
         log(f'backLeftWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backRightWheel = sim.simxGetObjectHandle(
-            clientId, './back_left_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './back_right_wheel', sim.simx_opmode_oneshot_wait)
         log(f'backRightWheel handel - {res is sim.simx_return_ok}', tag)
 
-        res, self.camera_handle = sim.simxGetObjectHandle(clientId, '/robot/camera', sim.simx_opmode_oneshot_wait)
+        res, self.camera_handle = sim.simxGetObjectHandle(clientId, './camera', sim.simx_opmode_oneshot_wait)
         res_stream, resolution, image = sim.simxGetVisionSensorImage(
             self.clientId, self.camera_handle, 0, sim.simx_opmode_streaming)
         log(f'Camera handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}', tag)
 
-        res, self.robot_handle = sim.simxGetObjectHandle(clientId, '/robot', sim.simx_opmode_oneshot_wait)
+        res, self.robot_handle = sim.simxGetObjectHandle(clientId, 'robot', sim.simx_opmode_oneshot_wait)
         res_stream, euler_angles = sim.simxGetObjectOrientation(
             self.clientId, self.robot_handle, -1, sim.simx_opmode_streaming)
         self.gyroscopeEmulator = GyroscopeEmulator()
@@ -174,7 +174,7 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         log(f'Sonar_b handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}, '
             f'{self.sonarHandle_b}', tag)
 
-        res, self.sonarHandle_l = sim.simxGetObjectHandle(clientId, '/robot/sensor_left', sim.simx_opmode_oneshot_wait)
+        res, self.sonarHandle_l = sim.simxGetObjectHandle(clientId, './sensor_left', sim.simx_opmode_oneshot_wait)
         res_stream, _, _, _, _ = (
             sim.simxReadProximitySensor(self.clientId, self.sonarHandle_l, sim.simx_opmode_streaming))
         log(f'Sonar_l handel - {res is sim.simx_return_ok}, {res_stream is sim.simx_return_ok}, '
@@ -272,13 +272,13 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         pass
 
     def setRightSpeed(self, speed) -> None:
-        speed = -speed
+        speed = speed
         error = sim.simxSetJointTargetVelocity(
-            self.clientId, self.frontRightWheel, -speed, sim.simx_opmode_oneshot_wait)
+            self.clientId, self.frontRightWheel, speed, sim.simx_opmode_oneshot_wait)
         log(f'frontRightWheel: {error is sim.simx_return_ok}', tag)
 
         error = sim.simxSetJointTargetVelocity(
-            self.clientId, self.backRightWheel, -speed, sim.simx_opmode_oneshot_wait)
+            self.clientId, self.backRightWheel, speed, sim.simx_opmode_oneshot_wait)
         log(f'backRightWheel: {error is sim.simx_return_ok}', tag)
 
     def setLeftSpeed(self, speed) -> None:
@@ -306,11 +306,11 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
 
         v = constants.ROTATION_SPEED
         if left:
-            self.setLeftSpeed(v)
-            self.setRightSpeed(-v)
-        else:
             self.setLeftSpeed(-v)
             self.setRightSpeed(v)
+        else:
+            self.setLeftSpeed(v)
+            self.setRightSpeed(-v)
 
         self.analyser.registerGyroListener(listener)
 

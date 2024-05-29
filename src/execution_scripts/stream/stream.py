@@ -26,7 +26,7 @@ def gen():
         if analyser is None:
             continue
 
-        frame = analyser.iterationData.cameraImage
+        frame = analyser.previousData.cameraImage
 
         if frame is None:
             continue

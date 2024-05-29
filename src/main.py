@@ -43,6 +43,7 @@ def parseConfiguration():
     constants.use_flask = d[constants.USE_FLASK]
     constants.flask_delay = d[constants.FLASK_DELAY]
 
+    constants.ARUCO_SIDE_SIZE = d[constants.ARUCO_SIZE]
     arucoDict = d[constants.ARUCO_DICTIONARY]
 
     match arucoDict:
