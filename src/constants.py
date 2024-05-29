@@ -72,6 +72,8 @@ BUILD_PLOT = "BUILD_PLOT"
 USE_FLASK = "USE_FLASK"
 FLASK_DELAY = "FLASK_DELAY"
 
+ARUCO_DICTIONARY = "ARUCO_DICTIONARY"
+
 
 # configuration (Values will be replaced by config)
 isEmulation: bool
@@ -79,3 +81,4 @@ onlyImportantLogs: bool
 buildPlot: bool
 use_flask: bool
 flask_delay: float
+arucoDictionary: int

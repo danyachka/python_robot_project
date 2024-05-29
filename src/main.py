@@ -2,6 +2,8 @@ from pathlib import Path
 import json
 from threading import Thread
 
+import cv2.aruco
+
 from src.execution_scripts.stream import stream
 
 from src import constants
@@ -40,6 +42,45 @@ def parseConfiguration():
     constants.buildPlot = d[constants.BUILD_PLOT]
     constants.use_flask = d[constants.USE_FLASK]
     constants.flask_delay = d[constants.FLASK_DELAY]
+
+    arucoDict = d[constants.ARUCO_DICTIONARY]
+
+    match arucoDict:
+        case "DICT_4X4_50":
+            constants.arucoDictionary = cv2.aruco.DICT_4X4_50
+        case "DICT_4X4_100":
+            constants.arucoDictionary = cv2.aruco.DICT_4X4_100
+        case "DICT_4X4_250":
+            constants.arucoDictionary = cv2.aruco.DICT_4X4_250
+        case "DICT_4X4_1000":
+            constants.arucoDictionary = cv2.aruco.DICT_4X4_1000
+
+        case "DICT_5X5_50":
+            constants.arucoDictionary = cv2.aruco.DICT_5X5_50
+        case "DICT_5X5_100":
+            constants.arucoDictionary = cv2.aruco.DICT_5X5_100
+        case "DICT_5X5_250":
+            constants.arucoDictionary = cv2.aruco.DICT_5X5_250
+        case "DICT_5X5_1000":
+            constants.arucoDictionary = cv2.aruco.DICT_5X5_1000
+
+        case "DICT_6X6_50":
+            constants.arucoDictionary = cv2.aruco.DICT_6X6_50
+        case "DICT_6X6_100":
+            constants.arucoDictionary = cv2.aruco.DICT_6X6_100
+        case "DICT_6X6_250":
+            constants.arucoDictionary = cv2.aruco.DICT_6X6_250
+        case "DICT_6X6_1000":
+            constants.arucoDictionary = cv2.aruco.DICT_6X6_1000
+
+        case "DICT_7X7_50":
+            constants.arucoDictionary = cv2.aruco.DICT_7X7_50
+        case "DICT_7X7_100":
+            constants.arucoDictionary = cv2.aruco.DICT_7X7_100
+        case "DICT_7X7_250":
+            constants.arucoDictionary = cv2.aruco.DICT_7X7_250
+        case "DICT_7X7_1000":
+            constants.arucoDictionary = cv2.aruco.DICT_7X7_1000
 
 
 def main():

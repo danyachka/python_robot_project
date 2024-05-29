@@ -76,7 +76,7 @@ class ArucoDetector:
     isTest: bool
 
     def __init__(self, cameraMatrix, distCfs, isTest=False):
-        arucoDict = aruco.getPredefinedDictionary(aruco.DICT_4X4_1000)
+        arucoDict = aruco.getPredefinedDictionary(constants.arucoDictionary)
         arucoParams = aruco.DetectorParameters()
         self.detector = aruco.ArucoDetector(arucoDict, arucoParams)
         self.cameraMatrix = cameraMatrix
