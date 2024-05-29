@@ -16,8 +16,12 @@ def index():
 
 
 def gen():
+    yieldTime = time.time()
     while True:
-        time.sleep(delay)
+        elapsed = time.time() - yieldTime
+
+        if elapsed < delay:
+            time.sleep(delay - elapsed)
 
         if analyser is None:
             continue
@@ -34,6 +38,7 @@ def gen():
 
         frame = jpeg.tobytes()
 
+        yieldTime = time.time()
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
@@ -44,4 +49,4 @@ def video_feed():
 
 
 def start():
-    app.run(host='0.0.0.0', debug=False, threaded=True)
+    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)

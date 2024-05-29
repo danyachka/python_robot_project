@@ -139,7 +139,8 @@ class Iterator:
             self.onException(e, False)
 
     def onDestroy(self):
-        cv.destroyAllWindows()
+        if not constants.use_flask:
+            cv.destroyAllWindows()
 
         self.executor.onDestroy()
 

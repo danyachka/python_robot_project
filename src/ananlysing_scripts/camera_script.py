@@ -111,10 +111,11 @@ class ArucoDetector:
         else:
             logError("No aruco detected", tag)
 
-        cv.imshow("Camera image", image)
         if self.isTest:
+            cv.imshow("Camera image test", image)
             cv.waitKey(5_000)
-        else:
+        elif not constants.use_flask:
+            cv.imshow("Camera image", image)
             cv.waitKey(1)
 
         log(f'Image\'s been processed', tag)

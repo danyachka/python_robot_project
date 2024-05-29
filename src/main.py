@@ -39,6 +39,7 @@ def parseConfiguration():
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
     constants.use_flask = d[constants.USE_FLASK]
+    constants.flask_delay = d[constants.FLASK_DELAY]
 
 
 def main():
@@ -56,7 +57,7 @@ def main():
         thread = Thread(target=iterator.start, daemon=True)
         thread.start()
 
-        stream.delay = constants.main_dt
+        stream.delay = constants.flask_delay
         stream.start()
     else:
         stream.app = None
