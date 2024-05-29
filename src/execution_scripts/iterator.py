@@ -9,6 +9,7 @@ import time
 import cv2 as cv
 from threading import Thread
 from matplotlib import pyplot as plt
+from src.execution_scripts.stream import stream
 
 from src import constants
 from src.ananlysing_scripts.analyser import Analyser
@@ -36,14 +37,14 @@ class Iterator:
 
     executor: HardwareExecutorModel
 
-    def __init__(self, isEmulation, buildPlot, arucoDict, finish):
-        self.isEmulation = isEmulation
-        self.buildPlot = buildPlot
+    def __init__(self, arucoDict, finish):
+        self.isEmulation = constants.isEmulation
+        self.buildPlot = constants.buildPlot
 
-        if buildPlot:
+        if constants.buildPlot:
             self.plotData = np.zeros((150, 2))
 
-        if isEmulation:
+        if constants.isEmulation:
             self.__startSimulation()
 
             self.executor = HardwareExecutorEmulator(self.clientId)
@@ -52,6 +53,12 @@ class Iterator:
 
         self.analyser = Analyser(self.executor, arucoDict, finish)
         self.executor.setAnalyser(self.analyser)
+
+        if constants.use_flask:
+            self.__startStream()
+
+    def __startStream(self):
+        stream.analyser = self.analyser
 
     def __startSimulation(self):
         sim.simxFinish(-1)  # just in case, close all opened connections

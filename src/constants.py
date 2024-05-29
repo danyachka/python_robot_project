@@ -69,8 +69,11 @@ IS_IN_MAIN = "IS_IN_MAIN"
 IS_EMULATION = "IS_EMULATION"
 PRINT_ONLY_IMPORTANT_LOGS = "PRINT_ONLY_IMPORTANT_LOGS"
 BUILD_PLOT = "BUILD_PLOT"
+USE_FLASK = "USE_FLASK"
 
-# read configuration (Values will be replaced by config)
+
+# configuration (Values will be replaced by config)
 isEmulation: bool
 onlyImportantLogs: bool
 buildPlot: bool
+use_flask: bool

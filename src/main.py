@@ -1,5 +1,9 @@
 from pathlib import Path
 import json
+from threading import Thread
+
+from src.execution_scripts.stream import stream
+
 from src import constants
 from src import logger
 
@@ -34,6 +38,7 @@ def parseConfiguration():
     constants.isEmulation = d[constants.IS_EMULATION]
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
+    constants.use_flask = d[constants.USE_FLASK]
 
 
 def main():
@@ -43,9 +48,20 @@ def main():
 
     from src.execution_scripts.iterator import Iterator
 
-    iterator = Iterator(constants.isEmulation, constants.isEmulation, d, f)
+    iterator = Iterator(d, f)
     logger.onlyImportant = constants.onlyImportantLogs
-    iterator.start()
+
+    if constants.use_flask:
+
+        thread = Thread(target=iterator.start, daemon=True)
+        thread.start()
+
+        stream.delay = constants.main_dt
+        stream.start()
+    else:
+        stream.app = None
+
+        iterator.start()
 
 
 if __name__ == '__main__':
