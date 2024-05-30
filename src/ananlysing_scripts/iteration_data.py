@@ -1,5 +1,6 @@
 from enum import Enum
 
+from src.constants import SONAR_DIST_NOTHING
 from src.ananlysing_scripts.camera_script import ArucoInfo
 
 import numpy as np
@@ -28,11 +29,23 @@ class SonarInfo:
     back: float
     left: float
 
-    def __init__(self, front, right, back, left):
+    def __init__(self, front=SONAR_DIST_NOTHING, right=SONAR_DIST_NOTHING,
+                 back=SONAR_DIST_NOTHING, left=SONAR_DIST_NOTHING):
         self.front = front
         self.right = right
         self.back = back
         self.left = left
+
+    def setData(self, index, data):
+        match index:
+            case 0:
+                self.front = data
+            case 1:
+                self.right = data
+            case 2:
+                self.back = data
+            case 3:
+                self.left = data
 
     def __str__(self):
         return f"{self.front}, {self.right}, {self.back}, {self.left}"

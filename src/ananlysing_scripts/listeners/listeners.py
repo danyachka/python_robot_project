@@ -152,7 +152,7 @@ class RotationListener(GyroListener):
         log(f'RotationAngle = {absoluteAngle}, subtraction = {abs(self.angleToRotate - absoluteAngle)}'
             , "RotationListener")
 
-        if isAngleClose(self.angleToRotate, absoluteAngle):
+        if isAngleClose(self.angleToRotate, absoluteAngle, checkAngle=3):
             self.executor.isRotating = False
 
             self.executor.setLeftSpeed(0)

@@ -1,9 +1,11 @@
 import math
 import time
+from threading import Thread
 
 import numpy as np
 import cv2 as cv
 # from mpu6050 import mpu6050
+# import RPi.GPIO as GPIO
 
 from abc import ABCMeta, abstractmethod, ABC
 
@@ -324,6 +326,13 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     gyroSensor = None
 
+    sonarThread: Thread
+
+    lastSonarData: SonarInfo = SonarInfo()
+
+    TRIG = [10, 12, 14, 16]
+    ECHO = [9, 11, 13, 15]
+
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
                              [0., 584.82488533, 234.52954564],
                              [0., 0., 1.]])
@@ -332,6 +341,11 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     def __init__(self):
         super().__init__()
+
+        GPIO.setmode(GPIO.BCM)
+        for i in range(4):
+            GPIO.setup(self.TRIG[i], GPIO.OUT)
+            GPIO.setup(self.ECHO[i], GPIO.IN)
 
         self.cap = cv.VideoCapture(0)
 
@@ -364,7 +378,67 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         return [data['x'], data['y'], data['z']]
 
     def readSonarData(self) -> SonarInfo:
-        pass
+        temp = self.lastSonarData
+
+        if self.sonarThread is not None:
+            if self.sonarThread.isAlive():
+                return SonarInfo()
+
+        self.lastSonarData = SonarInfo()
+        self.sonarThread = Thread(target=self.__startSonarThread)
+
+        return temp
+
+    def __startSonarThread(self):
+        self.__clearSonar()
+
+        absoluteStartTime = time.time()
+        startTimes = [0, 0, 0, 0]
+
+        while True:
+            time.sleep(constants.SONAR_CHECK_ITERATION_SLEEP)
+            iterTime = time.time()
+            if iterTime - absoluteStartTime > constants.SONAR_MAX_SIGNAL_WAITING:
+                return
+
+            for i in range(4):
+                start = startTimes[i]
+                if start != 0 and start != -1:
+                    duration = iterTime - start
+                    if duration > constants.SONAR_MAX_DURATION:
+                        startTimes[i] = -1
+
+            if startTimes.all() == -1:
+                return
+
+            # Check if started
+            for i in range(4):
+                start = startTimes[i]
+                if start == 0 and start != -1 and GPIO.input(self.ECHO[i]) == 0:
+                    startTimes[i] = iterTime
+
+            # Check if found
+            for i in range(4):
+                start = startTimes[i]
+                if start != 0 and start != -1 and GPIO.input(self.ECHO[i]) == 1:
+                    distance = (iterTime - start) * constants.SOUND_SPEED / 2
+
+                    if distance > constants.SONAR_MAX_DIST:
+                        logError(f"Some how distance is more, then {constants.SONAR_MAX_DIST}. "
+                                 f"{distance}, {iterTime}, {startTimes}", self.__name__)
+                        continue
+
+                    self.lastSonarData.setData(i, distance)
+                    startTimes[i] = -1
+
+    def __clearSonar(self):
+        for trig in self.TRIG:
+            GPIO.output(trig, True)
+
+        time.sleep(0.001)
+
+        for trig in self.TRIG:
+            GPIO.output(trig, False)
 
     def readInfraScannerData(self):
         pass
