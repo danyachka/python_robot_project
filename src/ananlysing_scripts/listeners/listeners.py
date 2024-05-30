@@ -8,7 +8,7 @@ from src.logger import log
 
 
 def isAngleClose(angle1, angle2, checkAngle=1.5):
-    return abs(angle1 - angle2) < checkAngle
+    return abs(getDeltaAngle(angle1, angle2)) < checkAngle
 
 
 def angleToCoords(angle):

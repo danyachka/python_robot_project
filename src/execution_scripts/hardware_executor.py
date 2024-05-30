@@ -4,8 +4,6 @@ from threading import Thread
 
 import numpy as np
 import cv2 as cv
-# from mpu6050 import mpu6050
-# import RPi.GPIO as GPIO
 
 from abc import ABCMeta, abstractmethod, ABC
 
@@ -17,6 +15,9 @@ from src import constants
 
 if constants.isEmulation:
     import sim
+else:
+    from mpu6050 import mpu6050
+    import RPi.GPIO as GPIO
 
 tag = "HardwareExecutor"
 
@@ -131,19 +132,19 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         self.clientId = clientId
 
         res, self.frontLeftWheel = sim.simxGetObjectHandle(
-            clientId, './front_left_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './lf', sim.simx_opmode_oneshot_wait)
         log(f'frontLeftWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.frontRightWheel = sim.simxGetObjectHandle(
-            clientId, './front_right_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './rf', sim.simx_opmode_oneshot_wait)
         log(f'frontRightWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backLeftWheel = sim.simxGetObjectHandle(
-            clientId, './back_left_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './lb', sim.simx_opmode_oneshot_wait)
         log(f'backLeftWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.backRightWheel = sim.simxGetObjectHandle(
-            clientId, './back_right_wheel', sim.simx_opmode_oneshot_wait)
+            clientId, './rb', sim.simx_opmode_oneshot_wait)
         log(f'backRightWheel handel - {res is sim.simx_return_ok}', tag)
 
         res, self.camera_handle = sim.simxGetObjectHandle(clientId, './camera', sim.simx_opmode_oneshot_wait)
@@ -326,12 +327,12 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     gyroSensor = None
 
-    sonarThread: Thread
+    sonarThread: Thread = None
 
     lastSonarData: SonarInfo = SonarInfo()
 
-    TRIG = [10, 12, 14, 16]
-    ECHO = [9, 11, 13, 15]
+    TRIG = [18, 20, 14, 16]
+    ECHO = [17, 21, 13, 15]
 
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
                              [0., 584.82488533, 234.52954564],
@@ -343,7 +344,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         super().__init__()
 
         GPIO.setmode(GPIO.BCM)
-        for i in range(4):
+        for i in range(len(self.TRIG)):
             GPIO.setup(self.TRIG[i], GPIO.OUT)
             GPIO.setup(self.ECHO[i], GPIO.IN)
 
@@ -381,11 +382,12 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         temp = self.lastSonarData
 
         if self.sonarThread is not None:
-            if self.sonarThread.isAlive():
-                return SonarInfo()
+            if self.sonarThread.is_alive():
+                return temp
 
         self.lastSonarData = SonarInfo()
         self.sonarThread = Thread(target=self.__startSonarThread)
+        self.sonarThread.start()
 
         return temp
 
@@ -393,7 +395,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         self.__clearSonar()
 
         absoluteStartTime = time.time()
-        startTimes = [0, 0, 0, 0]
+        startTimes = [0] * len(self.TRIG)
 
         while True:
             time.sleep(constants.SONAR_CHECK_ITERATION_SLEEP)
@@ -401,31 +403,35 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
             if iterTime - absoluteStartTime > constants.SONAR_MAX_SIGNAL_WAITING:
                 return
 
-            for i in range(4):
+            for i in range(len(self.TRIG)):
                 start = startTimes[i]
                 if start != 0 and start != -1:
                     duration = iterTime - start
                     if duration > constants.SONAR_MAX_DURATION:
                         startTimes[i] = -1
 
-            if startTimes.all() == -1:
+            isEnd = True
+            for i in range(len(self.TRIG)):
+                isEnd = isEnd and startTimes[i] == -1
+            if isEnd:
                 return
 
             # Check if started
-            for i in range(4):
+            for i in range(len(self.TRIG)):
                 start = startTimes[i]
-                if start == 0 and start != -1 and GPIO.input(self.ECHO[i]) == 0:
+                if start == 0 and start != -1 and GPIO.input(self.ECHO[i]) == 1:
                     startTimes[i] = iterTime
 
             # Check if found
-            for i in range(4):
+            for i in range(len(self.TRIG)):
                 start = startTimes[i]
-                if start != 0 and start != -1 and GPIO.input(self.ECHO[i]) == 1:
+                if start != 0 and start != -1 and GPIO.input(self.ECHO[i]) == 0:
                     distance = (iterTime - start) * constants.SOUND_SPEED / 2
 
                     if distance > constants.SONAR_MAX_DIST:
                         logError(f"Some how distance is more, then {constants.SONAR_MAX_DIST}. "
-                                 f"{distance}, {iterTime}, {startTimes}", self.__name__)
+                                 f"{distance}, {iterTime}, {startTimes}", self.__class__.__name__)
+                        startTimes[i] = -1
                         continue
 
                     self.lastSonarData.setData(i, distance)
@@ -435,7 +441,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         for trig in self.TRIG:
             GPIO.output(trig, True)
 
-        time.sleep(0.001)
+        time.sleep(0.00001)
 
         for trig in self.TRIG:
             GPIO.output(trig, False)

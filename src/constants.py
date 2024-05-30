@@ -10,7 +10,7 @@ gyroThreadId = 1
 
 
 # Physics
-SOUND_SPEED = 34300
+SOUND_SPEED = 343.00
 
 
 # Size info (from config)
