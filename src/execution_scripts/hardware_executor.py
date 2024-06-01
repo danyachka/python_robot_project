@@ -334,6 +334,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     TRIG = [18, 20, 14, 16]
     ECHO = [17, 21, 13, 15]
 
+    gyro_bias = [-1.8526727175380198, 0.4408821747229168, -1.686442607025719]
+
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
                              [0., 584.82488533, 234.52954564],
                              [0., 0., 1.]])
@@ -366,7 +368,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         return image
 
     def readGyro(self, dt) -> float:
-        data = self.readRawGyro()[2]
+        data = self.readRawGyro()[2] * dt
 
         return data
 
@@ -376,7 +378,9 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         if data is None:
             return [0, 0, 0]
 
-        return [data['x'], data['y'], data['z']]
+        return [data['x'] - self.gyro_bias[0],
+                data['y'] - self.gyro_bias[1],
+                data['z'] - self.gyro_bias[2]]
 
     def readSonarData(self) -> SonarInfo:
         temp = self.lastSonarData
