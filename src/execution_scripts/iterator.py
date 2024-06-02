@@ -14,7 +14,8 @@ from src.execution_scripts.stream import stream
 from src import constants
 from src.ananlysing_scripts.analyser import Analyser
 from src.constants import gyro_dt, main_dt
-from src.execution_scripts.hardware_executor import HardwareExecutorEmulator, HardwareExecutor, HardwareExecutorModel
+from src.execution_scripts.executor.hardware_executor import HardwareExecutorEmulator, HardwareExecutorModel
+from src.execution_scripts.executor.executor import HardwareExecutor
 
 from src.logger import logBlue, logError, logCriticalError
 

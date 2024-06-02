@@ -7,7 +7,7 @@ from src.ananlysing_scripts.listeners.listeners import (angleToCoords, getDeltaA
 from src.ananlysing_scripts.iteration_data import IterationData, State
 from src.ananlysing_scripts.listeners.obstacle_scanning_listener import ObstacleScanningListener
 from src.execution_scripts.emulation import emulation_tools
-from src.execution_scripts.hardware_executor import HardwareExecutorModel
+from src.execution_scripts.executor.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo, rad2Deg
 
