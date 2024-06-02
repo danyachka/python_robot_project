@@ -29,6 +29,8 @@ class HardwareExecutorModel:
 
     gyroKalmanFilter = None
 
+    isRotating = False
+
     @abstractmethod
     def __init__(self):
         self.__initializeKalmanFilter()
@@ -74,9 +76,9 @@ class HardwareExecutorModel:
     def readInfraScannerData(self):
         pass
 
-    @abstractmethod
     def setSpeed(self, speed) -> None:
-        pass
+        self.setLeftSpeed(speed)
+        self.setRightSpeed(speed)
 
     @abstractmethod
     def setRightSpeed(self, speed) -> None:
@@ -86,9 +88,24 @@ class HardwareExecutorModel:
     def setLeftSpeed(self, speed) -> None:
         pass
 
-    @abstractmethod
-    def rotate(self, toRotate, degrees, toState) -> None:
-        pass
+    def rotate(self, toRotate, left, toState) -> None:
+
+        self.setLeftSpeed(0)
+        self.setRightSpeed(0)
+
+        self.isRotating = True
+
+        listener = RotationListener(self, toRotate, toState)
+
+        v = constants.ROTATION_SPEED
+        if left:
+            self.setLeftSpeed(-v)
+            self.setRightSpeed(v)
+        else:
+            self.setLeftSpeed(v)
+            self.setRightSpeed(-v)
+
+        self.analyser.registerGyroListener(listener)
 
     @abstractmethod
     def onDestroy(self) -> None:
@@ -113,8 +130,6 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
     sonarHandle_r = None
     sonarHandle_b = None
     sonarHandle_l = None
-
-    isRotating: bool = False
 
     cameraMatrix = np.array([[772.15579521, 0., 318.24378241],
                              [0., 772.28979442, 237.61600108],
@@ -289,29 +304,6 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         error = sim.simxSetJointTargetVelocity(
             self.clientId, self.backLeftWheel, speed, sim.simx_opmode_oneshot_wait)
         log(f'backLeftWheel: {error is sim.simx_return_ok}', tag)
-
-    def setSpeed(self, speed) -> None:
-        self.setLeftSpeed(speed)
-        self.setRightSpeed(speed)
-
-    def rotate(self, toRotate, left, toState) -> None:
-
-        self.setLeftSpeed(0)
-        self.setRightSpeed(0)
-
-        self.isRotating = True
-
-        listener = RotationListener(self, toRotate, toState)
-
-        v = constants.ROTATION_SPEED
-        if left:
-            self.setLeftSpeed(-v)
-            self.setRightSpeed(v)
-        else:
-            self.setLeftSpeed(v)
-            self.setRightSpeed(-v)
-
-        self.analyser.registerGyroListener(listener)
 
     def onDestroy(self) -> None:
         pass

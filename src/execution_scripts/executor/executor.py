@@ -16,6 +16,20 @@ if not constants.isEmulation:
 
 
 # Should execute commands with actual hardware
+def setWheelSpeed(speed, IN1, IN2, pwm):
+    if speed > 0:
+        GPIO.output(IN1, GPIO.HIGH)
+        GPIO.output(IN2, GPIO.LOW)
+    elif speed < 0:
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.HIGH)
+    else:
+        GPIO.output(IN1, GPIO.LOW)
+        GPIO.output(IN2, GPIO.LOW)
+
+    pwm.ChangeDutyCycle(abs(speed))
+
+
 class HardwareExecutor(HardwareExecutorModel, ABC):
     cap = None
 
@@ -24,6 +38,18 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     sonarThread: Thread = None
 
     lastSonarData: SonarInfo = SonarInfo()
+
+    # right wheels
+    IN1_r = 17
+    IN2_r = 27
+    ENA_r = 22
+    pwm_r = None
+
+    # left wheels
+    IN1_l = 17
+    IN2_l = 27
+    ENA_l = 22
+    pwm_l = None
 
     TRIG = [18, 20, 14, 16]
     ECHO = [17, 21, 13, 15]
@@ -40,6 +66,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         super().__init__()
 
         GPIO.setmode(GPIO.BCM)
+        GPIO.setwarnings(False)
         for i in range(len(self.TRIG)):
             GPIO.setup(self.TRIG[i], GPIO.OUT)
             GPIO.setup(self.ECHO[i], GPIO.IN)
@@ -50,6 +77,21 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         if not self.cap.isOpened():
             raise Exception("Failed to open camera")
+
+    def __setupWheels(self) -> None:
+        GPIO.setup(self.IN1_r, GPIO.OUT)
+        GPIO.setup(self.IN2_r, GPIO.OUT)
+        GPIO.setup(self.ENA_r, GPIO.OUT)
+
+        self.pwm_r = GPIO.PWM(self.ENA_r, 100)
+        self.pwm_r.start(0)
+
+        GPIO.setup(self.IN1_l, GPIO.OUT)
+        GPIO.setup(self.IN2_l, GPIO.OUT)
+        GPIO.setup(self.ENA_l, GPIO.OUT)
+
+        self.pwm_l = GPIO.PWM(self.ENA_l, 100)
+        self.pwm_l.start(0)
 
     def readImage(self) -> np.ndarray:
 
@@ -147,18 +189,17 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     def readInfraScannerData(self):
         pass
 
-    def setSpeed(self, speed) -> None:
-        pass
-
     def setRightSpeed(self, speed) -> None:
-        pass
+        setWheelSpeed(speed, self.IN1_r, self.IN2_r, self.pwm_r)
 
     def setLeftSpeed(self, speed) -> None:
-        pass
-
-    def rotate(self, toRotate, degrees, toState) -> None:
-        pass
+        setWheelSpeed(speed, self.IN1_l, self.IN2_l, self.pwm_l)
 
     def onDestroy(self) -> None:
         self.cap.release()
+
+        self.pwm_r.stop()
+        self.pwm_l.stop()
+
+        GPIO.cleanup()
 
