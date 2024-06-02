@@ -56,6 +56,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         self.gyroSensor = mpu6050(0x68)
 
+        self.__setupWheels()
+
         if not self.cap.isOpened():
             raise Exception("Failed to open camera")
 
@@ -163,8 +165,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         pass
 
     def setRightSpeed(self, speed) -> None:
-        self.motor_r_f.setSpeed(speed)
-        self.motor_r_b.setSpeed(speed)
+        self.motor_r_f.setSpeed(-speed)
+        self.motor_r_b.setSpeed(-speed)
 
     def setLeftSpeed(self, speed) -> None:
         self.motor_l_f.setSpeed(speed)

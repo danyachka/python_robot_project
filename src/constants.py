@@ -1,5 +1,7 @@
 import math
 
+import cv2
+
 # Thread info
 MAIN_FR = 10
 main_dt = 1 / MAIN_FR
@@ -87,9 +89,9 @@ ARUCO_SIZE = "ARUCO_SIZE"
 
 
 # configuration (Values will be replaced by config)
-isEmulation: bool
-onlyImportantLogs: bool
-buildPlot: bool
-use_flask: bool
-flask_delay: float
-arucoDictionary: int
+isEmulation: bool = False
+onlyImportantLogs: bool = True
+buildPlot: bool = False
+use_flask: bool = False
+flask_delay: float = 0.2
+arucoDictionary: int = cv2.aruco.DICT_4X4_1000

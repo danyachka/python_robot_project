@@ -117,6 +117,8 @@ class Iterator:
                         "Iterator (Main)", isImportant=True)
         except Exception as e:
             self.onException(e, True)
+        except KeyboardInterrupt:
+            self.onDestroy()
 
     def startGyroIteration(self):
         try:
@@ -138,6 +140,8 @@ class Iterator:
                         "Iterator (Gyro)", isImportant=False)
         except Exception as e:
             self.onException(e, False)
+        except KeyboardInterrupt:
+            self.onDestroy()
 
     def onDestroy(self):
         if not constants.use_flask:
@@ -164,6 +168,7 @@ class Iterator:
 
         text = json.dumps(resDict)
 
+        self.onDestroy()
         file = open("data/exception_res.json", "w")
         file.write(text)
         file.close()
