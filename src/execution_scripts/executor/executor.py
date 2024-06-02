@@ -15,21 +15,6 @@ if not constants.isEmulation:
     import RPi.GPIO as GPIO
 
 
-# Should execute commands with actual hardware
-def setWheelSpeed(speed, IN1, IN2, pwm):
-    if speed > 0:
-        GPIO.output(IN1, GPIO.HIGH)
-        GPIO.output(IN2, GPIO.LOW)
-    elif speed < 0:
-        GPIO.output(IN1, GPIO.LOW)
-        GPIO.output(IN2, GPIO.HIGH)
-    else:
-        GPIO.output(IN1, GPIO.LOW)
-        GPIO.output(IN2, GPIO.LOW)
-
-    pwm.ChangeDutyCycle(abs(speed))
-
-
 class HardwareExecutor(HardwareExecutorModel, ABC):
     cap = None
 
@@ -40,16 +25,12 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     lastSonarData: SonarInfo = SonarInfo()
 
     # right wheels
-    IN1_r = 17
-    IN2_r = 27
-    ENA_r = 22
-    pwm_r = None
+    motor_r_f = None
+    motor_r_b = None
 
     # left wheels
-    IN1_l = 17
-    IN2_l = 27
-    ENA_l = 22
-    pwm_l = None
+    motor_l_f = None
+    motor_l_b = None
 
     TRIG = [18, 20, 14, 16]
     ECHO = [17, 21, 13, 15]
@@ -62,7 +43,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     distCfs = np.array([[-0.39671064,  0.0474044,   0.00244292, -0.00081249,  0.56456562]])
 
-    def __init__(self, GPIO=None):
+    def __init__(self):
         super().__init__()
 
         GPIO.setmode(GPIO.BCM)
@@ -79,19 +60,11 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
             raise Exception("Failed to open camera")
 
     def __setupWheels(self) -> None:
-        GPIO.setup(self.IN1_r, GPIO.OUT)
-        GPIO.setup(self.IN2_r, GPIO.OUT)
-        GPIO.setup(self.ENA_r, GPIO.OUT)
+        self.motor_l_f = DCMotor(16, 20)
+        self.motor_l_b = DCMotor(19, 26)
 
-        self.pwm_r = GPIO.PWM(self.ENA_r, 100)
-        self.pwm_r.start(0)
-
-        GPIO.setup(self.IN1_l, GPIO.OUT)
-        GPIO.setup(self.IN2_l, GPIO.OUT)
-        GPIO.setup(self.ENA_l, GPIO.OUT)
-
-        self.pwm_l = GPIO.PWM(self.ENA_l, 100)
-        self.pwm_l.start(0)
+        self.motor_r_f = DCMotor(12, 13)
+        self.motor_r_b = DCMotor(5, 6)
 
     def readImage(self) -> np.ndarray:
 
@@ -190,16 +163,47 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         pass
 
     def setRightSpeed(self, speed) -> None:
-        setWheelSpeed(speed, self.IN1_r, self.IN2_r, self.pwm_r)
+        self.motor_r_f.setSpeed(speed)
+        self.motor_r_b.setSpeed(speed)
 
     def setLeftSpeed(self, speed) -> None:
-        setWheelSpeed(speed, self.IN1_l, self.IN2_l, self.pwm_l)
+        self.motor_l_f.setSpeed(speed)
+        self.motor_l_b.setSpeed(speed)
 
     def onDestroy(self) -> None:
         self.cap.release()
 
-        self.pwm_r.stop()
-        self.pwm_l.stop()
+        self.motor_r_f.release()
+        self.motor_r_b.release()
+        self.motor_l_f.release()
+        self.motor_l_b.release()
 
         GPIO.cleanup()
 
+
+class DCMotor:
+    def __init__(self, pin1, pin2):
+        self.pin1 = pin1
+        self.pin2 = pin2
+
+        GPIO.setup(pin1, GPIO.OUT)
+        GPIO.setup(pin2, GPIO.OUT)
+
+        self.pwm = GPIO.PWM(pin1, 1000)
+        self.pwm.start(0)
+
+    def setSpeed(self, speed):
+        if speed > 0:
+            GPIO.output(self.pin1, GPIO.HIGH)
+            GPIO.output(self.pin2, GPIO.LOW)
+        elif speed < 0:
+            GPIO.output(self.pin1, GPIO.LOW)
+            GPIO.output(self.pin2, GPIO.HIGH)
+        else:
+            GPIO.output(self.pin1, GPIO.LOW)
+            GPIO.output(self.pin2, GPIO.LOW)
+
+        self.pwm.ChangeDutyCycle(abs(speed))
+
+    def release(self):
+        self.pwm.stop()

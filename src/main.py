@@ -38,6 +38,11 @@ def parseConfiguration():
     d = json.loads(text)
 
     constants.isEmulation = d[constants.IS_EMULATION]
+    if not constants.isEmulation:
+        constants.MOVEMENT_SPEED = 75
+        constants.LOW_MOVEMENT_SPEED = 50
+        constants.ROTATION_SPEED = 25
+
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
     constants.use_flask = d[constants.USE_FLASK]
