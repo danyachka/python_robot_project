@@ -69,12 +69,18 @@ class Moving2TargetListener(StepListener):
         if self.analyser.state != State.MOVING2TARGET:
             return
 
-        if self.analyser.currentArucoId != -1:
+        if self.analyser.arucoInfo.isValid():
             return
 
         # Check if robot is close enough
         if constants.SONAR_FAKE_MIN < iterationData.sonarData.front < constants.OBSTACLE_DISTANCE:
             self.analyser.onObstacleFound()
+            return
+
+        if not isAngleClose(self.analyser.absoluteAngle, self.analyser.currentArucoDirectionAngle,
+                            constants.MAX_MISSING_ANGLE_ON_MOVING):
+            self.analyser.rotate(toRotate=self.analyser.currentArucoDirectionAngle,
+                                 stateAfterRotation=State.MOVING2TARGET)
             return
 
 
@@ -93,12 +99,21 @@ class ArucoCloserListener(StepListener):
         if self.analyser.lastMeasuredArucoDistance < constants.ARUCO_DISTANCE:
             return True
 
-        return (iterationData.sonarData.front < constants.ARUCO_DISTANCE and
+        checkDist = constants.ARUCO_DISTANCE_CHECKING
+        arucoInfo = self.analyser.arucoInfo
+        if arucoInfo.isValid():
+            checkDist /= math.cos(math.degrees(arucoInfo.angle - 180))
+
+        if checkDist > constants.ARUCO_DISTANCE_CHECKING * 1.4:
+            checkDist = constants.ARUCO_DISTANCE_CHECKING * 1.4
+
+        return (iterationData.sonarData.front < checkDist and
                 self.analyser.lastMeasuredArucoDistance < constants.ARUCO_CAMERA_DISTANCE)
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):
-        if self.analyser.currentArucoId == -1:
+        if not self.analyser.arucoInfo.isValid():
             self.endListening()
+            return
 
         # Check if robot is close enough
         if self.isCloseEnough(iterationData):
@@ -108,7 +123,7 @@ class ArucoCloserListener(StepListener):
         # Rotate if angle is missing
         arucoResult = iterationData.arucoResult
         for i, arucoId in enumerate(arucoResult.ids):
-            if arucoId != self.analyser.currentArucoId:
+            if arucoId != self.analyser.arucoInfo.id:
                 continue
 
             if arucoId != self.analyser.finishId:

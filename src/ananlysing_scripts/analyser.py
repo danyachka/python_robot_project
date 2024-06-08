@@ -1,6 +1,8 @@
 import math
 import time
 
+import numpy as np
+
 from src import constants
 from src.ananlysing_scripts.listeners.listeners import (angleToCoords, getDeltaAngle, StepListener, GyroListener,
                                                         ArucoCloserListener, Moving2TargetListener)
@@ -9,7 +11,7 @@ from src.ananlysing_scripts.listeners.obstacle_scanning_listener import Obstacle
 from src.execution_scripts.emulation import emulation_tools
 from src.execution_scripts.executor.hardware_executor import HardwareExecutorModel
 
-from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoInfo, rad2Deg
+from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoResult, rad2Deg, ArucoInfo, fakeArucoInfo
 
 from src.logger import log, logBlue, logError
 
@@ -21,7 +23,6 @@ class Analyser:
 
     state: State = State.MOVING2TARGET
 
-    currentArucoId: int = -1
     arucoDict: dict[int, float]
     finishId: int = -1
     scannedArucoIds: list = []
@@ -38,7 +39,7 @@ class Analyser:
 
     absoluteAngle: float = 0.
     currentArucoDirectionAngle: float = 0.
-    lastMeasuredArucoDistance: float = float('inf')
+    arucoInfo: ArucoInfo = fakeArucoInfo
 
     gyroTimeStamp = 0
     gyro_dt = constants.gyro_dt
@@ -73,41 +74,48 @@ class Analyser:
         self.notifyListeners(self.iterationData, self.previousData)
 
     def onArucoFound(self):
-        arucoResult: ArucoInfo = self.iterationData.arucoResult
+        arucoResult: ArucoResult = self.iterationData.arucoResult
 
         # usual handling
         if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO}:
             return
 
-        for i, arucoId in enumerate(arucoResult.ids):
-            if arucoId in self.scannedArucoIdsSet:
+        arucoId = -1
+        index = -1
+        for i, curArucoId in enumerate(arucoResult.ids):
+            if curArucoId in self.scannedArucoIdsSet:
                 continue
 
-            if arucoId not in self.arucoDict and arucoId != self.finishId:
+            if curArucoId not in self.arucoDict and curArucoId != self.finishId:
                 continue
 
             if arucoResult.normals[i] is None:
                 continue
 
-            if arucoId != self.finishId:
-                angle = self.arucoDict[arucoId]
-            else:
-                angle = 0
-            self.currentArucoId = arucoId
+            arucoId = curArucoId
+            index = i
 
-            angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
-                                              math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
-
-            print(angleToRotate)
-            self.currentArucoDirectionAngle = angleToCoords(arucoResult.angles[i] + angle)
-            self.lastMeasuredArucoDistance = arucoResult.distances[i]
-
-            self.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
-
-            self.scannedArucoIds.append(arucoId)
-            self.scannedArucoIdsSet.add(arucoId)
-
+        if arucoId == -1:
             return
+
+        if arucoId != self.finishId:
+            angle = self.arucoDict[arucoId]
+        else:
+            angle = 0
+
+        arucoInfo = ArucoInfo(arucoId, arucoResult.normals[index], arucoResult.angles[index],
+                              arucoResult.centers[index], arucoResult.distances[index])
+
+        angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoInfo.center) *
+                                          math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
+
+        print(angleToRotate)
+        self.currentArucoDirectionAngle = angleToCoords(arucoInfo.angle + angle)
+
+        self.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
+
+        self.scannedArucoIds.append(arucoId)
+        self.scannedArucoIdsSet.add(arucoId)
 
     def onGyroIteration(self):
         currentTime = time.time()
@@ -154,7 +162,6 @@ class Analyser:
 
         match toState:
             case State.MOVING2TARGET:
-                self.registerListener(Moving2TargetListener(self))
                 self.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
             case State.GETTING_CLOSER2ARUCO:
                 self.registerListener(ArucoCloserListener(self))
@@ -164,12 +171,12 @@ class Analyser:
         if self.state != State.GETTING_CLOSER2ARUCO:
             return
 
-        if self.currentArucoId == self.finishId:
+        if self.arucoInfo.id == self.finishId:
             self.hardwareExecutor.setSpeed(0)
             self.state = State.STOP
             return
 
-        self.currentArucoId = -1
+        self.arucoInfo = fakeArucoInfo
         self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
 
     def onObstacleFound(self):

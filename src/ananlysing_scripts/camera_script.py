@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 
 import numpy as np
 import cv2 as cv
@@ -14,7 +15,26 @@ def rad2Deg(rad):
     return rad * 180 / math.pi
 
 
+@dataclass
 class ArucoInfo:
+    id: int
+
+    normal: list
+
+    angle: float
+
+    center: int
+
+    distance: float
+
+    def isValid(self):
+        return self.id != -1
+
+
+fakeArucoInfo = ArucoInfo(-1, None, 0, 0, float('inf'))
+
+
+class ArucoResult:
     ids: np.ndarray
     isFound: bool
 
@@ -83,9 +103,9 @@ class ArucoDetector:
         self.distCfs = distCfs
         self.isTest = isTest
 
-    def onImage(self, image: np.ndarray) -> ArucoInfo:
+    def onImage(self, image: np.ndarray) -> ArucoResult:
         if image is None:
-            return ArucoInfo(np.array([]), [], False, [], [])
+            return ArucoResult(np.array([]), [], False, [], [])
 
         # gray = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
 
@@ -121,9 +141,9 @@ class ArucoDetector:
         log(f'Image\'s been processed', tag)
 
         if len(corners) > 0:
-            return ArucoInfo(ids.flatten(), normals, True, centers, distances)
+            return ArucoResult(ids.flatten(), normals, True, centers, distances)
         else:
-            return ArucoInfo(np.array([]), [], False, [], [])
+            return ArucoResult(np.array([]), [], False, [], [])
 
     def __getOrientation(self, image, corners) -> tuple[np.ndarray, float]:
         side = constants.ARUCO_SIDE_SIZE

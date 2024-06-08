@@ -158,7 +158,7 @@ class Iterator:
             constants.ERROR_MESSAGE: trace,
             constants.IS_IN_MAIN: isMainThread,
             constants.CURRENT_DIRECTION: self.analyser.currentArucoDirectionAngle,
-            constants.CURRENT_ID: self.analyser.currentArucoId,
+            constants.CURRENT_ID: self.analyser.arucoInfo.id,
             constants.CURRENT_ANGLE: self.analyser.absoluteAngle,
             constants.READ_IDS: self.analyser.scannedArucoIds,
             constants.STATE: str(self.analyser.state.name)
