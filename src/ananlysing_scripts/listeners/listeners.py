@@ -5,48 +5,7 @@ from src.ananlysing_scripts.camera_script import rad2Deg
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 
 from src.logger import log
-
-
-def isAngleClose(angle1, angle2, checkAngle=1.5):
-    return abs(getDeltaAngle(angle1, angle2)) < checkAngle
-
-
-def angleToCoords(angle):
-    if angle < 0:
-        angle = 360 + angle
-    elif angle >= 360:
-        angle = angle % 360
-    return angle
-
-
-def getDeltaAngle(absolute, other):
-    da = 0.
-    if absolute < 180:
-        if absolute <= other <= absolute + 180:
-            da = other - absolute
-        else:
-            if other < absolute:
-                da = absolute - other
-            else:
-                da = absolute + (360 - other)
-            da *= -1
-    else:  # > 180
-        if absolute - 180 <= other <= absolute:
-            da = other - absolute
-        else:
-            if other > absolute:
-                da = other - absolute
-            else:
-                da = other + (360 - absolute)
-
-    return da
-
-
-if __name__ == '__main__':
-    print(getDeltaAngle(90, 45))
-    print(getDeltaAngle(90, 330))
-    print(getDeltaAngle(90, 210))
-    print(getDeltaAngle(250, 45))
+from src.utils import isAngleClose, angleToCoords
 
 
 class StepListener:
@@ -96,7 +55,7 @@ class ArucoCloserListener(StepListener):
         self.analyser.removeListener(self)
 
     def isCloseEnough(self, iterationData: IterationData) -> bool:
-        if self.analyser.lastMeasuredArucoDistance < constants.ARUCO_DISTANCE:
+        if self.analyser.arucoInfo.distance < constants.ARUCO_DISTANCE:
             return True
 
         checkDist = constants.ARUCO_DISTANCE_CHECKING
@@ -107,8 +66,9 @@ class ArucoCloserListener(StepListener):
         if checkDist > constants.ARUCO_DISTANCE_CHECKING * 1.4:
             checkDist = constants.ARUCO_DISTANCE_CHECKING * 1.4
 
-        return (iterationData.sonarData.front < checkDist and
-                self.analyser.lastMeasuredArucoDistance < constants.ARUCO_CAMERA_DISTANCE)
+        return ((iterationData.sonarData.front < checkDist and
+                self.analyser.arucoInfo.distance < constants.ARUCO_CAMERA_DISTANCE) or
+                self.analyser.arucoInfo.distance < checkDist)
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):
         if not self.analyser.arucoInfo.isValid():
@@ -131,9 +91,12 @@ class ArucoCloserListener(StepListener):
             else:
                 angle = 0
 
-            self.analyser.lastMeasuredArucoDistance = arucoResult.distances[i]
+            self.analyser.arucoInfo.normal = arucoResult.normals[i]
+            self.analyser.arucoInfo.angle = arucoResult.angles[i]
+            self.analyser.arucoInfo.center = arucoResult.centers[i]
+            self.analyser.arucoInfo.distance = arucoResult.distances[i]
 
-            if self.analyser.lastMeasuredArucoDistance > constants.ARUCO_CAMERA_DISTANCE:
+            if self.analyser.arucoInfo.distance > constants.ARUCO_CAMERA_DISTANCE:
                 self.analyser.currentArucoDirectionAngle = angleToCoords(arucoResult.angles[i] + angle)
 
             angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoResult.centers[i]) *
@@ -143,7 +106,7 @@ class ArucoCloserListener(StepListener):
             if isMissingDirection:
                 self.analyser.rotate(angle=angleToRotate, stateAfterRotation=State.GETTING_CLOSER2ARUCO)
                 self.analyser.removeListener(self)
-                return
+            return
 
 
 class GyroListener:

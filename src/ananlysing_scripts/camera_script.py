@@ -7,6 +7,7 @@ from cv2 import aruco
 
 from src import constants
 from src.logger import log, logError
+from src.utils import angleToCoords
 
 tag = "Camera"
 
@@ -31,7 +32,7 @@ class ArucoInfo:
         return self.id != -1
 
 
-fakeArucoInfo = ArucoInfo(-1, None, 0, 0, float('inf'))
+fakeArucoInfo = ArucoInfo(-1, [0, 0, 0], 0, 0, float('inf'))
 
 
 class ArucoResult:
@@ -78,7 +79,7 @@ class ArucoResult:
                 # first quarter
                 angle = rad2Deg(math.atan(dz / dx)) + 270
 
-            angle = (angle + absoluteAngle) % 360
+            angle = angleToCoords(absoluteAngle + angle)
 
             self.angles.append(angle)
 

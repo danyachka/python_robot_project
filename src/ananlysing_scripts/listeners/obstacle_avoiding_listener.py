@@ -1,7 +1,8 @@
 from src import constants
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
-from src.ananlysing_scripts.listeners.listeners import StepListener, getDeltaAngle, angleToCoords, isAngleClose
+from src.ananlysing_scripts.listeners.listeners import StepListener
 from src.logger import logBlue, log
+from src.utils import isAngleClose, getDeltaAngle, angleToCoords
 
 
 class ObstacleAvoidingListener(StepListener):

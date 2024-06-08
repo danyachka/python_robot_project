@@ -4,7 +4,8 @@ import time
 import numpy as np
 
 from src import constants
-from src.ananlysing_scripts.listeners.listeners import (angleToCoords, getDeltaAngle, StepListener, GyroListener,
+from src.ananlysing_scripts.listeners.aruco_parking_listener import ParkingListener, GettingCloseListener
+from src.ananlysing_scripts.listeners.listeners import (StepListener, GyroListener,
                                                         ArucoCloserListener, Moving2TargetListener)
 from src.ananlysing_scripts.iteration_data import IterationData, State
 from src.ananlysing_scripts.listeners.obstacle_scanning_listener import ObstacleScanningListener
@@ -14,6 +15,7 @@ from src.execution_scripts.executor.hardware_executor import HardwareExecutorMod
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoResult, rad2Deg, ArucoInfo, fakeArucoInfo
 
 from src.logger import log, logBlue, logError
+from src.utils import angleToCoords, getDeltaAngle
 
 tag = "Iteration"
 
@@ -105,6 +107,7 @@ class Analyser:
 
         arucoInfo = ArucoInfo(arucoId, arucoResult.normals[index], arucoResult.angles[index],
                               arucoResult.centers[index], arucoResult.distances[index])
+        self.arucoInfo = arucoInfo
 
         angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoInfo.center) *
                                           math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
@@ -166,18 +169,32 @@ class Analyser:
             case State.GETTING_CLOSER2ARUCO:
                 self.registerListener(ArucoCloserListener(self))
                 self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+            case State.ARUCO_PARKING_END:
+                self.getCloser2Aruco()
+            case State.ARUCO_PARKING:
+                self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
 
     def onGotClose2Aruco(self):
         if self.state != State.GETTING_CLOSER2ARUCO:
             return
 
-        if self.arucoInfo.id == self.finishId:
-            self.hardwareExecutor.setSpeed(0)
-            self.state = State.STOP
+        dl = getDeltaAngle(self.absoluteAngle, self.arucoInfo.angle)
+
+        if abs(dl) < constants.MISSING_ANGLE_PARKING:
+            self.getCloser2Aruco()
             return
 
-        self.arucoInfo = fakeArucoInfo
-        self.rotate(toRotate=self.currentArucoDirectionAngle, stateAfterRotation=State.MOVING2TARGET)
+        isRight = dl > 0
+
+        rotateAngle = angleToCoords(self.arucoInfo.angle + (-90 if isRight else 90))
+
+        self.rotate(toRotate=rotateAngle, stateAfterRotation=State.ARUCO_PARKING)
+
+        self.registerListener(ParkingListener(self, isRight))
+
+    def getCloser2Aruco(self):
+
+        self.registerListener(GettingCloseListener(self))
 
     def onObstacleFound(self):
         self.state = State.SCANNING_OBSTACLE

@@ -22,6 +22,10 @@ class State(Enum):
 
     GETTING_OVER_AN_OBSTACLE_SCANNING = 6
 
+    ARUCO_PARKING = 7
+
+    ARUCO_PARKING_END = 8
+
 
 class SonarInfo:
     front: float

@@ -2,9 +2,10 @@ import math
 
 from src import constants
 from src.ananlysing_scripts.iteration_data import State, IterationData
-from src.ananlysing_scripts.listeners.listeners import angleToCoords, getDeltaAngle, isAngleClose, StepListener
+from src.ananlysing_scripts.listeners.listeners import StepListener
 from src.ananlysing_scripts.listeners.obstacle_avoiding_listener import ObstacleAvoidingListener
 from src.logger import log
+from src.utils import angleToCoords, isAngleClose, getDeltaAngle
 
 
 class ObstacleScanningListener(StepListener):
@@ -46,7 +47,7 @@ class ObstacleScanningListener(StepListener):
         newListener.moveForward()
 
     def calcMinObstacleDistance(self, angle) -> float:
-        d = 1.4 * constants.OBSTACLE_DISTANCE
+        d = constants.OBSTACLE_DISTANCE
         # if not isAngleClose(angle, 0):
         #     d = constants.OBSTACLE_DISTANCE / math.cos(angle)
         #
