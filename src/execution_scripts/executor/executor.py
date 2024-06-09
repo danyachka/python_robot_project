@@ -161,8 +161,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         for trig in self.TRIG:
             GPIO.output(trig, False)
 
-    def readInfraScannerData(self):
-        pass
+    def readInfraScannerData(self) -> float:
+        return 0
 
     def setRightSpeed(self, speed) -> None:
         self.motor_r_f.setSpeed(-speed)

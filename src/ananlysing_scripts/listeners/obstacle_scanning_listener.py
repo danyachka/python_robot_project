@@ -21,9 +21,10 @@ class ObstacleScanningListener(StepListener):
 
     goOver = False
 
-    def __init__(self, analyser):
+    def __init__(self, analyser, shotAngle=constants.SHOT_ANGLE_ON_OBSTACLE):
         super().__init__()
         self.analyser = analyser
+        self.shotAngle = shotAngle
 
     def goOverAnObstacle(self, angle):
         angle = self.analyser.currentArucoDirectionAngle + angle
@@ -89,12 +90,12 @@ class ObstacleScanningListener(StepListener):
 
         if self.goLeft:
             self.analyser.rotate(toRotate=angleToCoords(
-                self.analyser.currentArucoDirectionAngle + self.rotationLevel * constants.SHOT_ANGLE_ON_OBSTACLE),
+                self.analyser.currentArucoDirectionAngle + self.rotationLevel * self.shotAngle),
                 stateAfterRotation=State.SCANNING_OBSTACLE)
             self.goLeft = False
         else:
             self.analyser.rotate(toRotate=angleToCoords(
-                self.analyser.currentArucoDirectionAngle - self.rotationLevel * constants.SHOT_ANGLE_ON_OBSTACLE),
+                self.analyser.currentArucoDirectionAngle - self.rotationLevel * self.shotAngle),
                 stateAfterRotation=State.SCANNING_OBSTACLE)
             self.goLeft = True
             self.rotationLevel += 1

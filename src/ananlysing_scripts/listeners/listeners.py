@@ -14,6 +14,38 @@ class StepListener:
         pass
 
 
+class Callback:
+
+    def call(self):
+        ...
+
+    def keepListening(self) -> bool:
+        ...
+
+
+class TicksListener(StepListener):
+    counter = 0
+
+    def __init__(self, analyser, ticks, callback):
+        super().__init__()
+        self.analyser = analyser
+        self.ticks = ticks
+        self.callback = callback
+
+    def end(self):
+        self.callback.call()
+        self.analyser.removeListener(self)
+
+    def onStep(self, iterationData: IterationData, previousData: IterationData):
+        self.counter += 1
+
+        if not self.callback.keepListening():
+            self.end()
+
+        if self.counter > self.ticks:
+            self.end()
+
+
 class Moving2TargetListener(StepListener):
     analyser = None
 
@@ -29,6 +61,10 @@ class Moving2TargetListener(StepListener):
             return
 
         if self.analyser.arucoInfo.isValid():
+            return
+
+        if iterationData.bottomScannerData > constants.MAX_BOTTOM_SCANNER_DATA:
+            self.analyser.onPitFound()
             return
 
         # Check if robot is close enough

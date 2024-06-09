@@ -6,7 +6,8 @@ import numpy as np
 from src import constants
 from src.ananlysing_scripts.listeners.aruco_parking_listener import ParkingListener, GettingCloseListener
 from src.ananlysing_scripts.listeners.listeners import (StepListener, GyroListener,
-                                                        ArucoCloserListener, Moving2TargetListener)
+                                                        ArucoCloserListener, Moving2TargetListener, Callback,
+                                                        TicksListener)
 from src.ananlysing_scripts.iteration_data import IterationData, State
 from src.ananlysing_scripts.listeners.obstacle_scanning_listener import ObstacleScanningListener
 from src.execution_scripts.emulation import emulation_tools
@@ -72,6 +73,9 @@ class Analyser:
 
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
         log(f"Sonar read points = {self.iterationData.sonarData}", tag)
+
+        self.iterationData.bottomScannerData = self.hardwareExecutor.readInfraScannerData()
+        log(f"Bottom scanner data = {self.iterationData.bottomScannerData}", tag)
 
         self.notifyListeners(self.iterationData, self.previousData)
 
@@ -196,11 +200,28 @@ class Analyser:
 
         self.registerListener(GettingCloseListener(self))
 
-    def onObstacleFound(self):
+    def onPitFound(self):
+        self.hardwareExecutor.setSpeed(0)
+
+        class CallbackPit(Callback):
+            def __init__(self, analyser):
+                self.analyser = analyser
+
+            def call(self):
+                self.analyser.onObstacleFound(shotAngle=2 * constants.SHOT_ANGLE_ON_OBSTACLE)
+
+            def keepListening(self) -> bool:
+                return self.analyser.iterationData.sonarData.back > constants.OBSTACLE_BACK_DISTANCE
+
+        callBack = CallbackPit(self)
+        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_GOING_BACK_PIT, callBack))
+        self.hardwareExecutor.setSpeed(-constants.LOW_MOVEMENT_SPEED)
+
+    def onObstacleFound(self, shotAngle=constants.SHOT_ANGLE_ON_OBSTACLE):
         self.state = State.SCANNING_OBSTACLE
         self.hardwareExecutor.setSpeed(0)
 
-        self.registerListener(ObstacleScanningListener(self))
+        self.registerListener(ObstacleScanningListener(self, shotAngle))
 
     def registerListener(self, listener):
         self.__listeners.append(listener)

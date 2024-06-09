@@ -66,6 +66,8 @@ class IterationData:
 
     sonarData: SonarInfo = SonarInfo(-1, -1, -1, -1)
 
+    bottomScannerData = 0
+
     arucoResult: ArucoResult = None
 
     isRotating: bool = False

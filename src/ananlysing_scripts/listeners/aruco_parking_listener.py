@@ -10,6 +10,8 @@ class ParkingListener(StepListener):
 
     turnedLeft: bool
 
+    checkSonar = True
+
     counter = 0
 
     def __init__(self, analyser, turnedLeft):
@@ -42,11 +44,11 @@ class ParkingListener(StepListener):
 
         distance = self.getSonarData(iterationData)
 
-        if distance > constants.ARUCO_DISTANCE_PARKING:
+        if distance > constants.ARUCO_DISTANCE_PARKING or (not self.checkSonar):
             return
 
-        self.stop()
-
+        self.checkSonar = False
+        self.counter = constants.WAIT_TICKS_ON_PARKING - constants.WAIT_TICKS_ON_PARKING_KEEP_MOVING
 
 class GettingCloseListener(StepListener):
 
