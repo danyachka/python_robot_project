@@ -41,7 +41,7 @@ def parseConfiguration():
     if not constants.isEmulation:
         constants.MOVEMENT_SPEED = 75
         constants.LOW_MOVEMENT_SPEED = 50
-        constants.ROTATION_SPEED = 25
+        constants.ROTATION_SPEED = 50
 
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
@@ -100,12 +100,16 @@ def main():
     logger.onlyImportant = constants.onlyImportantLogs
 
     if constants.use_flask:
-
         thread = Thread(target=iterator.start, daemon=True)
         thread.start()
 
-        stream.delay = constants.flask_delay
-        stream.start()
+        try:
+            stream.delay = constants.flask_delay
+            stream.start()
+        except Exception as e:
+            iterator.onException(e, True)
+        except KeyboardInterrupt:
+            iterator.onDestroy()
     else:
         stream.app = None
 
