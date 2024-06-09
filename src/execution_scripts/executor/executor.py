@@ -24,6 +24,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     lastSonarData: SonarInfo = SonarInfo()
 
+    BOTTOM_SENSOR_PIN = 17
+
     # right wheels
     motor_r_f = None
     motor_r_b = None
@@ -60,6 +62,11 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         if not self.cap.isOpened():
             raise Exception("Failed to open camera")
+
+    def __setupBottomScanner(self):
+
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(self.BOTTOM_SENSOR_PIN, GPIO.IN)
 
     def __setupWheels(self) -> None:
         self.motor_l_f = DCMotor(16, 20)
@@ -161,8 +168,10 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         for trig in self.TRIG:
             GPIO.output(trig, False)
 
-    def readInfraScannerData(self) -> float:
-        return 0
+    def readInfraScannerData(self) -> bool:
+        hasPit = GPIO.input(self.BOTTOM_SENSOR_PIN)
+
+        return not hasPit
 
     def setRightSpeed(self, speed) -> None:
         self.motor_r_f.setSpeed(-speed)

@@ -63,7 +63,7 @@ class Moving2TargetListener(StepListener):
         if self.analyser.arucoInfo.isValid():
             return
 
-        if iterationData.bottomScannerData > constants.MAX_BOTTOM_SCANNER_DATA:
+        if iterationData.hasPit:
             self.analyser.onPitFound()
             return
 

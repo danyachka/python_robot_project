@@ -50,6 +50,7 @@ class ParkingListener(StepListener):
         self.checkSonar = False
         self.counter = constants.WAIT_TICKS_ON_PARKING - constants.WAIT_TICKS_ON_PARKING_KEEP_MOVING
 
+
 class GettingCloseListener(StepListener):
 
     analyser = None

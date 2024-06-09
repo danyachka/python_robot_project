@@ -74,8 +74,8 @@ class Analyser:
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
         log(f"Sonar read points = {self.iterationData.sonarData}", tag)
 
-        self.iterationData.bottomScannerData = self.hardwareExecutor.readInfraScannerData()
-        log(f"Bottom scanner data = {self.iterationData.bottomScannerData}", tag)
+        self.iterationData.hasPit = self.hardwareExecutor.readInfraScannerData()
+        log(f"Bottom scanner data = {self.iterationData.hasPit}", tag)
 
         self.notifyListeners(self.iterationData, self.previousData)
 
@@ -183,8 +183,9 @@ class Analyser:
             return
 
         dl = getDeltaAngle(self.absoluteAngle, self.arucoInfo.angle)
+        log(f"Delta angle is: {dl}", tag, isImportant=True)
 
-        if abs(dl) < constants.MISSING_ANGLE_PARKING:
+        if abs(180 - abs(dl)) < constants.MISSING_ANGLE_PARKING:
             self.getCloser2Aruco()
             return
 

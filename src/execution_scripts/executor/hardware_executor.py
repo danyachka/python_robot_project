@@ -73,7 +73,7 @@ class HardwareExecutorModel:
         pass
 
     @abstractmethod
-    def readInfraScannerData(self) -> float:
+    def readInfraScannerData(self) -> bool:
         pass
 
     def setSpeed(self, speed) -> None:
@@ -282,8 +282,8 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
 
         return sonarData
 
-    def readInfraScannerData(self) -> float:
-        return 0
+    def readInfraScannerData(self) -> bool:
+        return False
 
     def setRightSpeed(self, speed) -> None:
         speed = speed
