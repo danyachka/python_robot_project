@@ -72,8 +72,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         self.motor_l_f = DCMotor(16, 20)
         self.motor_l_b = DCMotor(19, 26)
 
-        self.motor_r_f = DCMotor(12, 13)
-        self.motor_r_b = DCMotor(5, 6)
+        self.motor_r_f = DCMotor(13, 12)
+        self.motor_r_b = DCMotor(6, 5)
 
     def readImage(self) -> np.ndarray:
 
@@ -174,8 +174,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         return not hasPit
 
     def setRightSpeed(self, speed) -> None:
-        self.motor_r_f.setSpeed(-speed)
-        self.motor_r_b.setSpeed(-speed)
+        self.motor_r_f.setSpeed(speed)
+        self.motor_r_b.setSpeed(speed)
 
     def setLeftSpeed(self, speed) -> None:
         self.motor_l_f.setSpeed(speed)
@@ -208,6 +208,7 @@ class DCMotor:
             GPIO.output(self.pin1, GPIO.HIGH)
             GPIO.output(self.pin2, GPIO.LOW)
         elif speed < 0:
+            speed = 100 - abs(speed)
             GPIO.output(self.pin1, GPIO.LOW)
             GPIO.output(self.pin2, GPIO.HIGH)
         else:

@@ -5,22 +5,23 @@ from time import sleep
 executor = HardwareExecutor()
 
 try:
+    speed = 25
     print('Forward with speed: 100')
-    executor.setSpeed(50)
+    executor.setSpeed(speed)
     sleep(5)
     print('Back with speed: 100')
-    executor.setSpeed(-50)
+    executor.setSpeed(-speed)
     sleep(5)
     print('0%')
     executor.setSpeed(0)
     sleep(5)
     print('left')
-    executor.setRightSpeed(50)
-    executor.setLeftSpeed(-50)
+    executor.setRightSpeed(speed)
+    executor.setLeftSpeed(-speed)
     sleep(5)
     print('right')
-    executor.setRightSpeed(-50)
-    executor.setLeftSpeed(50)
+    executor.setRightSpeed(-speed)
+    executor.setLeftSpeed(speed)
     sleep(5)
 
 except KeyboardInterrupt:

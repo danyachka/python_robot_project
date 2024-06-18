@@ -39,9 +39,9 @@ def parseConfiguration():
 
     constants.isEmulation = d[constants.IS_EMULATION]
     if not constants.isEmulation:
-        constants.MOVEMENT_SPEED = 75
-        constants.LOW_MOVEMENT_SPEED = 50
-        constants.ROTATION_SPEED = 50
+        constants.MOVEMENT_SPEED = 50
+        constants.LOW_MOVEMENT_SPEED = 40
+        constants.ROTATION_SPEED = 40
 
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
