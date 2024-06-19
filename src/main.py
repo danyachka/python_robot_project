@@ -9,6 +9,8 @@ from src.execution_scripts.stream import stream
 from src import constants
 from src import logger
 
+import keyboard
+
 
 def parseDictionary() -> tuple[dict[int, float], int]:
     path = Path(__file__).parent.parent.joinpath("data").joinpath("dictionary.json")
@@ -99,6 +101,8 @@ def main():
     iterator = Iterator(d, f)
     logger.onlyImportant = constants.onlyImportantLogs
 
+    keyboard.add_hotkey("ctrl+alt+p", lambda: onKeyboardInterrupt(iterator))
+
     if constants.use_flask:
         thread = Thread(target=iterator.start, daemon=True)
         thread.start()
@@ -109,12 +113,16 @@ def main():
         except Exception as e:
             iterator.onDestroy()
             iterator.onException(e, True)
-        except KeyboardInterrupt:
-            iterator.onDestroy()
     else:
         stream.app = None
 
         iterator.start()
+
+
+def onKeyboardInterrupt(iterator):
+    iterator.onDestroy()
+    print("System's been released")
+    raise Exception("Penis movement's been detected")
 
 
 if __name__ == '__main__':
