@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 import json
 from threading import Thread
@@ -122,7 +123,7 @@ def main():
 def onKeyboardInterrupt(iterator):
     iterator.onDestroy()
     print("System's been released")
-    raise Exception("Penis movement's been detected")
+    sys.exit("Penis movement's been detected")
 
 
 if __name__ == '__main__':

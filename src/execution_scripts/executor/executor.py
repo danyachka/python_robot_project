@@ -35,8 +35,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     motor_l_f = None
     motor_l_b = None
 
-    TRIG = [18, 20, 14, 16]
-    ECHO = [17, 21, 13, 15]
+    TRIG = [25, 11, 8, 23]
+    ECHO = [10, 9, 7, 24]
 
     gyro_bias = [-1.8526727175380198, 0.4408821747229168, -1.686442607025719]
 
