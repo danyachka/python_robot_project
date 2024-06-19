@@ -26,6 +26,8 @@ tag = "Iterator"
 
 
 class Iterator:
+    isReleased = False
+
     isEmulation: bool
 
     buildPlot: bool
@@ -116,9 +118,11 @@ class Iterator:
                 logBlue(f'Iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}\n',
                         "Iterator (Main)", isImportant=True)
         except Exception as e:
+            self.onDestroy()
             self.onException(e, True)
         except KeyboardInterrupt:
-            self.onDestroy()
+            if not constants.use_flask:
+                self.onDestroy()
 
     def startGyroIteration(self):
         try:
@@ -139,15 +143,22 @@ class Iterator:
                 logBlue(f'Gyro iteration TPS = {1 / iterationTime if iterationTime != 0 else "infinity"}',
                         "Iterator (Gyro)", isImportant=False)
         except Exception as e:
-            self.onException(e, False)
-        except KeyboardInterrupt:
             self.onDestroy()
+            self.onException(e, False)
 
     def onDestroy(self):
+        if self.isReleased:
+            return
+        self.isReleased = True
+
         if not constants.use_flask:
             cv.destroyAllWindows()
 
+        logBlue("On destroy", self.__class__.__name__, isImportant=True)
+
         self.executor.onDestroy()
+
+        logBlue("On destroy processed", self.__class__.__name__, isImportant=True)
 
         if self.isEmulation:
             sim.simxFinish(self.clientId)
@@ -168,7 +179,6 @@ class Iterator:
 
         text = json.dumps(resDict)
 
-        self.onDestroy()
         file = open("data/exception_res.json", "w")
         file.write(text)
         file.close()

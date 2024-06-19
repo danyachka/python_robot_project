@@ -107,6 +107,7 @@ def main():
             stream.delay = constants.flask_delay
             stream.start()
         except Exception as e:
+            iterator.onDestroy()
             iterator.onException(e, True)
         except KeyboardInterrupt:
             iterator.onDestroy()

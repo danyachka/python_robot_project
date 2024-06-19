@@ -16,6 +16,7 @@ if not constants.isEmulation:
 
 
 class HardwareExecutor(HardwareExecutorModel, ABC):
+
     cap = None
 
     gyroSensor = None
@@ -183,6 +184,9 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     def onDestroy(self) -> None:
         self.cap.release()
+
+        self.setSpeed(0)
+        time.sleep(0.5)
 
         self.motor_r_f.release()
         self.motor_r_b.release()
