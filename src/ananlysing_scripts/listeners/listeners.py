@@ -20,7 +20,7 @@ class Callback:
         ...
 
     def keepListening(self) -> bool:
-        ...
+        return True
 
 
 class TicksListener(StepListener):
@@ -41,6 +41,7 @@ class TicksListener(StepListener):
 
         if not self.callback.keepListening():
             self.end()
+            return
 
         if self.counter > self.ticks:
             self.end()

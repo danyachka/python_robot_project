@@ -72,7 +72,7 @@ class Analyser:
             self.onArucoFound()
 
         self.iterationData.sonarData = self.hardwareExecutor.readSonarData()
-        log(f"Sonar read points = {self.iterationData.sonarData}", tag)
+        log(f"Sonar read points = {self.iterationData.sonarData}", tag, isImportant=True)
 
         self.iterationData.hasPit = self.hardwareExecutor.readInfraScannerData()
         log(f"Bottom scanner data = {self.iterationData.hasPit}", tag)
@@ -83,7 +83,8 @@ class Analyser:
         arucoResult: ArucoResult = self.iterationData.arucoResult
 
         # usual handling
-        if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO}:
+        if self.state in {State.ROTATING, State.STOP, State.GETTING_CLOSER2ARUCO,
+                          State.ARUCO_PARKING, State.ARUCO_PARKING_END}:
             return
 
         arucoId = -1
@@ -108,6 +109,8 @@ class Analyser:
             angle = self.arucoDict[arucoId]
         else:
             angle = 0
+
+        arucoId = int(arucoId)
 
         arucoInfo = ArucoInfo(arucoId, arucoResult.normals[index], arucoResult.angles[index],
                               arucoResult.centers[index], arucoResult.distances[index])
@@ -154,29 +157,61 @@ class Analyser:
             logError("Trying to start rotation during ROTATING state", tag)
             return
 
+        self.hardwareExecutor.setSpeed(0)
         self.state = State.ROTATING
-        if toRotate == 0:
-            toRotate = self.absoluteAngle + angle
 
-        toRotate = angleToCoords(toRotate)
+        class RotationStartCallback(Callback):
+            def __init__(self, analyser, a, tR):
+                self.analyser = analyser
+                self.angle = a
+                self.toRotate = tR
 
-        left: bool = getDeltaAngle(self.absoluteAngle, toRotate) > 0
+            def call(self):
+                if self.toRotate == 0:
+                    self.toRotate = self.analyser.absoluteAngle + self.angle
 
-        self.hardwareExecutor.rotate(toRotate, left, stateAfterRotation)
+                self.toRotate = angleToCoords(self.toRotate)
+
+                left: bool = getDeltaAngle(self.analyser.absoluteAngle, self.toRotate) > 0
+
+                self.analyser.hardwareExecutor.rotate(self.toRotate, left, stateAfterRotation)
+
+            def keepListening(self) -> bool:
+                return True
+
+        callBack = RotationStartCallback(self, angle, toRotate)
+        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_ROTATION, callBack))
 
     def onRotationEnd(self, toState):
-        self.state = toState
 
-        match toState:
-            case State.MOVING2TARGET:
-                self.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
-            case State.GETTING_CLOSER2ARUCO:
-                self.registerListener(ArucoCloserListener(self))
-                self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
-            case State.ARUCO_PARKING_END:
-                self.getCloser2Aruco()
-            case State.ARUCO_PARKING:
-                self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+        class RotationCallback(Callback):
+            def __init__(self, analyser):
+                self.analyser = analyser
+
+            def call(self):
+                self.analyser.state = toState
+
+                match toState:
+                    case State.MOVING2TARGET:
+                        self.analyser.hardwareExecutor.setSpeed(constants.MOVEMENT_SPEED)
+                    case State.GETTING_CLOSER2ARUCO:
+                        self.analyser.registerListener(ArucoCloserListener(self.analyser))
+                        self.analyser.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+                    case State.ARUCO_PARKING_END:
+                        self.analyser.getCloser2Aruco()
+                    case State.ARUCO_PARKING:
+                        self.analyser.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+                    case State.ARUCO_PARKING_CORRECT:
+                        angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - self.analyser.arucoInfo.center) *
+                                                          math.tan(constants.CAMERA_ANGLE / 2) / (
+                                                                      constants.imageW / 2)))
+                        self.analyser.rotate(angle=angleToRotate, stateAfterRotation=State.ARUCO_PARKING_END)
+
+            def keepListening(self) -> bool:
+                return True
+
+        callBack = RotationCallback(self)
+        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_ROTATION, callBack))
 
     def onGotClose2Aruco(self):
         if self.state != State.GETTING_CLOSER2ARUCO:
@@ -186,12 +221,13 @@ class Analyser:
         log(f"Delta angle is: {dl}", tag, isImportant=True)
 
         if abs(180 - abs(dl)) < constants.MISSING_ANGLE_PARKING:
-            self.getCloser2Aruco()
+            self.onRotationEnd(State.ARUCO_PARKING_CORRECT)
             return
 
         isRight = dl > 0
 
         rotateAngle = angleToCoords(self.arucoInfo.angle + (-90 if isRight else 90))
+        log(f"Parking toRotate is: {rotateAngle}", tag, isImportant=True)
 
         self.rotate(toRotate=rotateAngle, stateAfterRotation=State.ARUCO_PARKING)
 
@@ -199,7 +235,31 @@ class Analyser:
 
     def getCloser2Aruco(self):
 
-        self.registerListener(GettingCloseListener(self))
+        class ParkingEndedCallback(Callback):
+            def __init__(self, analyser):
+                self.analyser = analyser
+
+            def call(self):
+                self.analyser.rotate(toRotate=self.analyser.currentArucoDirectionAngle,
+                                     stateAfterRotation=State.MOVING2TARGET)
+
+        class ParkingCallback(Callback):
+            def __init__(self, analyser):
+                self.analyser = analyser
+
+            def call(self):
+                self.analyser.hardwareExecutor.setSpeed(0)
+                self.analyser.registerListener(
+                    TicksListener(self.analyser, constants.WAIT_TICKS_ON_PARKING_FINALLY_ENDED,
+                                  ParkingEndedCallback(self.analyser)))
+
+            def keepListening(self) -> bool:
+                return self.analyser.iterationData.sonarData.front > constants.ARUCO_DISTANCE
+
+        callBack = ParkingCallback(self)
+        self.state = State.ARUCO_PARKING_END_CLOSER
+        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_PARKING_END_CLOSER, callBack))
+        self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
 
     def onPitFound(self):
         self.hardwareExecutor.setSpeed(0)
