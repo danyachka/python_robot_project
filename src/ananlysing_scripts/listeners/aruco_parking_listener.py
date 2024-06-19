@@ -29,7 +29,7 @@ class ParkingListener(StepListener):
 
         angle = -90 if self.turnedLeft else 90
 
-        self.analyser.rotate(angle=angle, stateAfterRotation=State.ARUCO_PARKING_END)
+        self.analyser.rotate(angle=angle, stateAfterRotation=State.ARUCO_PARKING_CORRECT)
         self.analyser.removeListener(self)
 
     def onStep(self, iterationData: IterationData, previousData: IterationData):

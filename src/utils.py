@@ -36,7 +36,10 @@ def getDeltaAngle(absolute, other):
 
 
 if __name__ == '__main__':
-    print(getDeltaAngle(90, 45))
-    print(getDeltaAngle(90, 330))
-    print(getDeltaAngle(90, 210))
-    print(getDeltaAngle(250, 45))
+    print(getDeltaAngle(225, 13))
+    print(getDeltaAngle(13, 225))
+
+    print(getDeltaAngle(13, 156))
+    print(getDeltaAngle(156, 13))
+
+

@@ -154,6 +154,14 @@ class Iterator:
 
     def onException(self, exception: Exception, isMainThread):
         trace = ''.join(traceback.format_exception(exception))
+
+        print(type(self.analyser.arucoInfo.id))
+        print(type(isMainThread))
+        print(type(self.analyser.currentArucoDirectionAngle))
+        print(type(self.analyser.arucoInfo.id))
+        print(type(self.analyser.absoluteAngle))
+        print(type(self.analyser.scannedArucoIds[0]))
+        print(type(self.analyser.state.name))
         resDict = {
             constants.ERROR_MESSAGE: trace,
             constants.IS_IN_MAIN: isMainThread,
