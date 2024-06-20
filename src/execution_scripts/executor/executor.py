@@ -67,8 +67,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
             raise Exception("Failed to open camera")
 
     def __setupBottomScanner(self):
-
-        GPIO.setup(self.BOTTOM_SENSOR_PIN, GPIO.IN)
+        #GPIO.setup(self.BOTTOM_SENSOR_PIN, GPIO.IN)
+        pass
 
     def __setupWheels(self) -> None:
         self.motor_l_f = DCMotor(16, 20)
@@ -93,7 +93,11 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         return data
 
     def readRawGyro(self) -> [float, float, float]:
-        data = self.gyroSensor.get_gyro_data()
+        data = None
+        try:
+            data = self.gyroSensor.get_gyro_data()
+        except IOError:
+            logError("Gyroscope IO error", self.__class__.__name__)
 
         if data is None:
             return [0, 0, 0]
