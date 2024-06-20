@@ -25,7 +25,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     lastSonarData: SonarInfo = SonarInfo()
 
-    BOTTOM_SENSOR_PIN = 17
+    BOTTOM_SENSOR_PIN = 14
 
     # right wheels
     motor_r_f = None
@@ -59,6 +59,8 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
         self.gyroSensor = mpu6050(0x68)
 
+        self.__setupBottomScanner()
+
         self.__setupWheels()
 
         if not self.cap.isOpened():
@@ -66,7 +68,6 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     def __setupBottomScanner(self):
 
-        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self.BOTTOM_SENSOR_PIN, GPIO.IN)
 
     def __setupWheels(self) -> None:
@@ -115,50 +116,52 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
         return temp
 
     def __startSonarThread(self):
-        self.__clearSonar()
+        try:
+            self.__clearSonar()
 
-        absoluteStartTime = time.time()
-        startTimes = [0] * len(self.TRIG)
+            absoluteStartTime = time.time()
+            startTimes = [0] * len(self.TRIG)
 
-        while True:
-            time.sleep(constants.SONAR_CHECK_ITERATION_SLEEP)
-            iterTime = time.time()
-            if iterTime - absoluteStartTime > constants.SONAR_MAX_SIGNAL_WAITING:
-                return
+            while True:
+                time.sleep(constants.SONAR_CHECK_ITERATION_SLEEP)
+                iterTime = time.time()
+                if iterTime - absoluteStartTime > constants.SONAR_MAX_SIGNAL_WAITING:
+                    return
 
-            for i in range(len(self.TRIG)):
-                start = startTimes[i]
-                if start != 0 and start != -1:
-                    duration = iterTime - start
-                    if duration > constants.SONAR_MAX_DURATION:
+                for i in range(len(self.TRIG)):
+                    start = startTimes[i]
+                    if start != 0 and start != -1:
+                        duration = iterTime - start
+                        if duration > constants.SONAR_MAX_DURATION:
+                            startTimes[i] = -1
+
+                isEnd = True
+                for i in range(len(self.TRIG)):
+                    isEnd = isEnd and startTimes[i] == -1
+                if isEnd:
+                    return
+
+                # Check if started
+                for i, start in enumerate(startTimes):
+                    if start == 0 and start != -1 and GPIO.input(self.ECHO[i]) == 1:
+                        startTimes[i] = iterTime
+
+                # Check if found
+                for i in range(len(self.TRIG)):
+                    start = startTimes[i]
+                    if start != 0 and start != -1 and GPIO.input(self.ECHO[i]) == 0:
+                        distance = (iterTime - start) * constants.SOUND_SPEED / 2
+
+                        if distance > constants.SONAR_MAX_DIST:
+                            logError(f"Some how distance is more, then {constants.SONAR_MAX_DIST}. "
+                                     f"{distance}, {iterTime}, {startTimes}", self.__class__.__name__)
+                            startTimes[i] = -1
+                            continue
+
+                        self.lastSonarData.setData(i, distance)
                         startTimes[i] = -1
-
-            isEnd = True
-            for i in range(len(self.TRIG)):
-                isEnd = isEnd and startTimes[i] == -1
-            if isEnd:
-                return
-
-            # Check if started
-            for i in range(len(self.TRIG)):
-                start = startTimes[i]
-                if start == 0 and start != -1 and GPIO.input(self.ECHO[i]) == 1:
-                    startTimes[i] = iterTime
-
-            # Check if found
-            for i in range(len(self.TRIG)):
-                start = startTimes[i]
-                if start != 0 and start != -1 and GPIO.input(self.ECHO[i]) == 0:
-                    distance = (iterTime - start) * constants.SOUND_SPEED / 2
-
-                    if distance > constants.SONAR_MAX_DIST:
-                        logError(f"Some how distance is more, then {constants.SONAR_MAX_DIST}. "
-                                 f"{distance}, {iterTime}, {startTimes}", self.__class__.__name__)
-                        startTimes[i] = -1
-                        continue
-
-                    self.lastSonarData.setData(i, distance)
-                    startTimes[i] = -1
+        except Exception as e:
+            print(e.__traceback__)
 
     def __clearSonar(self):
         for trig in self.TRIG:
@@ -170,9 +173,9 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
             GPIO.output(trig, False)
 
     def readInfraScannerData(self) -> bool:
-        hasPit = GPIO.input(self.BOTTOM_SENSOR_PIN)
+        #hasPit = GPIO.input(self.BOTTOM_SENSOR_PIN)
 
-        return not hasPit
+        return False
 
     def setRightSpeed(self, speed) -> None:
         self.motor_r_f.setSpeed(speed)

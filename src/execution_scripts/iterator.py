@@ -191,6 +191,8 @@ class Iterator:
         file.write(text)
         file.close()
 
+        sys.exit()
+
     def showPlot(self):
         plt.figure(figsize=(10, 6))
         plt.plot(self.plotData, "-", color="blue")

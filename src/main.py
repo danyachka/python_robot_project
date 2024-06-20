@@ -1,3 +1,4 @@
+import math
 import sys
 from pathlib import Path
 import json
@@ -45,6 +46,7 @@ def parseConfiguration():
         constants.MOVEMENT_SPEED = 50
         constants.LOW_MOVEMENT_SPEED = 40
         constants.ROTATION_SPEED = 40
+        constants.CAMERA_ANGLE * 67 * math.pi / 180
 
     constants.onlyImportantLogs = d[constants.PRINT_ONLY_IMPORTANT_LOGS]
     constants.buildPlot = d[constants.BUILD_PLOT]
