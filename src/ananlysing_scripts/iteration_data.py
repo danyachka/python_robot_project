@@ -30,6 +30,8 @@ class State(Enum):
 
     ARUCO_PARKING_END_CLOSER = 10
 
+    ARUCO_PARKING_END_FINALLY = 11
+
 
 class SonarInfo:
     front: float

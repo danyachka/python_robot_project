@@ -249,6 +249,7 @@ class Analyser:
 
             def call(self):
                 self.analyser.hardwareExecutor.setSpeed(0)
+                self.analyser.state = State.ARUCO_PARKING_END_FINALLY
                 self.analyser.registerListener(
                     TicksListener(self.analyser, constants.WAIT_TICKS_ON_PARKING_FINALLY_ENDED,
                                   ParkingEndedCallback(self.analyser)))
@@ -258,8 +259,8 @@ class Analyser:
 
         callBack = ParkingCallback(self)
         self.state = State.ARUCO_PARKING_END_CLOSER
-        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_PARKING_END_CLOSER, callBack))
         self.hardwareExecutor.setSpeed(constants.LOW_MOVEMENT_SPEED)
+        self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_PARKING_END_CLOSER, callBack))
 
     def onPitFound(self):
         self.hardwareExecutor.setSpeed(0)
