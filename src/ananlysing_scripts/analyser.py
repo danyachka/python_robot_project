@@ -59,7 +59,7 @@ class Analyser:
 
     def onIteration(self):
         logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, "
-                f"{len(self.__gyroListeners)} and {[l.__class__.__name__ for l in self.__listeners]}", tag, isImportant=True)
+                f"{len(self.__gyroListeners)} and {self.getListenersNames()}", tag, isImportant=True)
         log(f"Gyro Hz = {1/self.gyro_dt}, abs = {self.absoluteAngle}, direction = {self.currentArucoDirectionAngle}",
             isImportant=True)
         self.previousData = self.iterationData
@@ -313,3 +313,6 @@ class Analyser:
     def __notifyGyroListeners(self, gyroData, dt):
         for listener in self.__gyroListeners:
             listener.onStep(gyroData, self.absoluteAngle, self.currentArucoDirectionAngle, dt)
+
+    def getListenersNames(self):
+        return f"{[l.__class__.__name__ for l in self.__listeners]}"

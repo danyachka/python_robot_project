@@ -1,6 +1,6 @@
 import time
 from pathlib import Path
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, stream_with_context
 import cv2 as cv
 
 
@@ -46,6 +46,31 @@ def gen():
 @app.route('/video')
 def video_feed():
     return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+def gen_text_updates():
+    yieldTime = time.time()
+    while True:
+        elapsed = time.time() - yieldTime
+
+        if elapsed < delay:
+            time.sleep(delay - elapsed)
+
+        # Update text values here
+        state = "none"
+        listeners = 'none'
+
+        if analyser != None:
+            state = analyser.state
+            listeners = analyser.getListenersNames()
+
+        yieldTime = time.time()
+        yield f'data: {{ "state": "{state}", "listeners": "{listeners}" }}\n\n'
+
+
+@app.route('/text_updates')
+def text_updates():
+    return Response(stream_with_context(gen_text_updates()), mimetype='text/event-stream')
 
 
 def start():

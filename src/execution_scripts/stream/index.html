@@ -1,7 +1,18 @@
 <html>
   <head>
+    <script>
+      const source = new EventSource('/text_updates');
+
+      source.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        document.getElementById('state').innerHTML = data.state;
+        document.getElementById('listeners').innerHTML = data.listeners;
+      };
+    </script>
   </head>
   <body>
     <img src="{{ url_for('video_feed') }}">
+    <p id="state"></p>
+    <p id="listeners"></p>
   </body>
 </html>
