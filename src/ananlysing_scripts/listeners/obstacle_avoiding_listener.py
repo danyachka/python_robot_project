@@ -1,6 +1,7 @@
 from src import constants
 from src.ananlysing_scripts.iteration_data import IterationData, SonarInfo, State
 from src.ananlysing_scripts.listeners.listeners import StepListener
+from src.execution_scripts.executor.sonar_reading_model import SonarReadingModel
 from src.logger import logBlue, log
 from src.utils import isAngleClose, getDeltaAngle, angleToCoords
 
@@ -39,15 +40,20 @@ class ObstacleAvoidingListener(StepListener):
         else:
             self.rotateCloser = constants.ROTATE_ON_AVOIDING
 
+        self.analyser.hardwareExecutor.sonarReadModel = SonarReadingModel(True, True, False, True)
+
         self.rotateOuter = -self.rotateCloser
 
     def endListening(self):
         self.analyser.removeListener(self)
 
-        log(f"Obstacle avoiding ended", self.__class__.__name__, isImportant=True)
+        log(f"Obstacle avoiding ended, angle: {self.analyser.currentArucoDirectionAngle}",
+            self.__class__.__name__, isImportant=True)
+
+        self.analyser.hardwareExecutor.sonarReadModel = SonarReadingModel(True, False, False, False)
 
         if not isAngleClose(self.analyser.currentArucoDirectionAngle, self.analyser.absoluteAngle):
-            self.analyser.rotate(toRotate=self.analyser.currentArucoDirectionAngle,
+            self.analyser.rotate(angle=0, toRotate=self.analyser.currentArucoDirectionAngle,
                                  stateAfterRotation=State.MOVING2TARGET)
         else:
             self.analyser.state = State.MOVING2TARGET
@@ -55,9 +61,9 @@ class ObstacleAvoidingListener(StepListener):
 
     def getObstacleSideData(self, iterationData: IterationData, innerSide=True) -> float:
         if self.isOnLeftSide and innerSide:
-            return iterationData.sonarData.left
-        else:
             return iterationData.sonarData.right
+        else:
+            return iterationData.sonarData.left
 
     def checkForEnd(self):
         angle = getDeltaAngle(self.analyser.absoluteAngle, self.angleEnd)

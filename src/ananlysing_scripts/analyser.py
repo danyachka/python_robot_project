@@ -14,6 +14,7 @@ from src.execution_scripts.emulation import emulation_tools
 from src.execution_scripts.executor.hardware_executor import HardwareExecutorModel
 
 from src.ananlysing_scripts.camera_script import ArucoDetector, ArucoResult, rad2Deg, ArucoInfo, fakeArucoInfo
+from src.execution_scripts.executor.sonar_reading_model import SonarReadingModel
 
 from src.logger import log, logBlue, logError
 from src.utils import angleToCoords, getDeltaAngle
@@ -58,7 +59,7 @@ class Analyser:
 
     def onIteration(self):
         logBlue(f"Starting next step, state = {self.state}, {self.scannedArucoIds}, "
-                f"{len(self.__gyroListeners)} and {len(self.__listeners)}", tag, isImportant=True)
+                f"{len(self.__gyroListeners)} and {[l.__class__.__name__ for l in self.__listeners]}", tag, isImportant=True)
         log(f"Gyro Hz = {1/self.gyro_dt}, abs = {self.absoluteAngle}, direction = {self.currentArucoDirectionAngle}",
             isImportant=True)
         self.previousData = self.iterationData
@@ -114,7 +115,7 @@ class Analyser:
 
         arucoInfo = ArucoInfo(arucoId, arucoResult.normals[index], arucoResult.angles[index],
                               arucoResult.centers[index], arucoResult.distances[index])
-        self.arucoInfo = arucoInfo
+        self.setArucoInfo(arucoInfo)
 
         angleToRotate = rad2Deg(math.atan((constants.imageW / 2 - arucoInfo.center) *
                                           math.tan(constants.CAMERA_ANGLE / 2) / (constants.imageW / 2)))
@@ -152,7 +153,7 @@ class Analyser:
         self.__notifyGyroListeners(self.iterationData.gyroData, self.gyro_dt)
         self.gyroTimeStamp = currentTime
 
-    def rotate(self, *, angle=0., toRotate=0., stateAfterRotation):
+    def rotate(self, *, angle=0, toRotate=0, stateAfterRotation):
         if self.state == State.ROTATING:
             logError("Trying to start rotation during ROTATING state", tag)
             return
@@ -167,7 +168,7 @@ class Analyser:
                 self.toRotate = tR
 
             def call(self):
-                if self.toRotate == 0:
+                if self.angle != 0:
                     self.toRotate = self.analyser.absoluteAngle + self.angle
 
                 self.toRotate = angleToCoords(self.toRotate)
@@ -175,11 +176,12 @@ class Analyser:
                 left: bool = getDeltaAngle(self.analyser.absoluteAngle, self.toRotate) > 0
 
                 self.analyser.hardwareExecutor.rotate(self.toRotate, left, stateAfterRotation)
+                logBlue(f"Started rotation to angle: {self.toRotate}", tag, True)
 
             def keepListening(self) -> bool:
                 return True
 
-        callBack = RotationStartCallback(self, angle, toRotate)
+        callBack = RotationStartCallback(self, a=angle, tR=toRotate)
         self.registerListener(TicksListener(self, constants.WAIT_TICKS_ON_ROTATION, callBack))
 
     def onRotationEnd(self, toState):
@@ -240,6 +242,7 @@ class Analyser:
                 self.analyser = analyser
 
             def call(self):
+                self.analyser.setArucoInfo(fakeArucoInfo)
                 self.analyser.rotate(toRotate=self.analyser.currentArucoDirectionAngle,
                                      stateAfterRotation=State.MOVING2TARGET)
 
@@ -268,8 +271,10 @@ class Analyser:
         class CallbackPit(Callback):
             def __init__(self, analyser):
                 self.analyser = analyser
+                self.analyser.hardwareExecutor.sonarReadModel = SonarReadingModel(True, False, True, False)
 
             def call(self):
+                self.analyser.hardwareExecutor.sonarReadModel = SonarReadingModel(True, False, False, False)
                 self.analyser.onObstacleFound(shotAngle=2 * constants.SHOT_ANGLE_ON_OBSTACLE)
 
             def keepListening(self) -> bool:
@@ -284,6 +289,10 @@ class Analyser:
         self.hardwareExecutor.setSpeed(0)
 
         self.registerListener(ObstacleScanningListener(self, shotAngle))
+
+    def setArucoInfo(self, info):
+        self.arucoInfo = info
+        logBlue(f"ArucoInfo's been changed: {self.arucoInfo}", tag, isImportant=True)
 
     def registerListener(self, listener):
         self.__listeners.append(listener)

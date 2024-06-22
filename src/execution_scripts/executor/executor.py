@@ -126,6 +126,9 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
             absoluteStartTime = time.time()
             startTimes = [0] * len(self.TRIG)
 
+            for k in range(4):
+                startTimes[k] = 0 if self.sonarReadModel[k] else -1
+
             while True:
                 time.sleep(constants.SONAR_CHECK_ITERATION_SLEEP)
                 iterTime = time.time()

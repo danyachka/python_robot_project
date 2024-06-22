@@ -9,6 +9,7 @@ from abc import ABCMeta, abstractmethod, ABC
 from src.ananlysing_scripts.iteration_data import SonarInfo
 from src.ananlysing_scripts.listeners.listeners import RotationListener
 from src.execution_scripts.emulation.emulation_tools import GyroscopeEmulator
+from src.execution_scripts.executor.sonar_reading_model import SonarReadingModel
 from src.logger import log, logError
 from src import constants
 
@@ -30,6 +31,8 @@ class HardwareExecutorModel:
     gyroKalmanFilter = None
 
     isRotating = False
+
+    sonarReadModel = SonarReadingModel(True, False, False, False)
 
     @abstractmethod
     def __init__(self):
@@ -231,16 +234,26 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
         return self.gyroscopeEmulator.update(euler_angles)
 
     def readSonarData(self) -> SonarInfo:
-        err1, _, front, _, _ = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_f, sim.simx_opmode_buffer))
-        err2, _, right, _, _ = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_r, sim.simx_opmode_buffer))
-        err3, _, back, _, _ = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_b, sim.simx_opmode_buffer))
-        err4, _, left, _, _ = (
-            sim.simxReadProximitySensor(self.clientId, self.sonarHandle_l, sim.simx_opmode_buffer))
+        err1 = sim.simx_return_novalue_flag
+        err2 = sim.simx_return_novalue_flag
+        err3 = sim.simx_return_novalue_flag
+        err4 = sim.simx_return_novalue_flag
+        if self.sonarReadModel.front:
+            err1, _, front, _, _ = (
+                sim.simxReadProximitySensor(self.clientId, self.sonarHandle_f, sim.simx_opmode_buffer))
+        if self.sonarReadModel.right:
+            err2, _, right, _, _ = (
+                sim.simxReadProximitySensor(self.clientId, self.sonarHandle_r, sim.simx_opmode_buffer))
+        if self.sonarReadModel.back:
+            err3, _, back, _, _ = (
+                sim.simxReadProximitySensor(self.clientId, self.sonarHandle_b, sim.simx_opmode_buffer))
+        if self.sonarReadModel.left:
+            err4, _, left, _, _ = (
+                sim.simxReadProximitySensor(self.clientId, self.sonarHandle_l, sim.simx_opmode_buffer))
 
-        if err1 != sim.simx_return_ok:
+        if not self.sonarReadModel.front:
+            front = constants.SONAR_DIST_NOTHING
+        elif err1 != sim.simx_return_ok or not self.sonarReadModel.front:
             logError("Error reading proximity sensor (front)", tag)
             front = constants.SONAR_DIST_NOTHING
         else:
@@ -248,7 +261,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             if front < constants.SONAR_FAKE_MIN:
                 front = constants.SONAR_DIST_NOTHING
 
-        if err2 != sim.simx_return_ok:
+        if not self.sonarReadModel.right:
+            right = constants.SONAR_DIST_NOTHING
+        elif err2 != sim.simx_return_ok or not self.sonarReadModel.right:
             logError("Error reading proximity sensor (right)", tag)
             right = constants.SONAR_DIST_NOTHING
         else:
@@ -258,7 +273,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             elif right == front:
                 right = constants.SONAR_DIST_NOTHING
 
-        if err3 != sim.simx_return_ok:
+        if not self.sonarReadModel.back:
+            back = constants.SONAR_DIST_NOTHING
+        elif err3 != sim.simx_return_ok:
             logError("Error reading proximity sensor (back)", tag)
             back = constants.SONAR_DIST_NOTHING
         else:
@@ -268,7 +285,9 @@ class HardwareExecutorEmulator(HardwareExecutorModel, ABC):
             elif back == right:
                 back = constants.SONAR_DIST_NOTHING
 
-        if err4 != sim.simx_return_ok:
+        if not self.sonarReadModel.left:
+            left = constants.SONAR_DIST_NOTHING
+        elif err4 != sim.simx_return_ok:
             logError("Error reading proximity sensor (left)", tag)
             left = constants.SONAR_DIST_NOTHING
         else:
