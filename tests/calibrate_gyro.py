@@ -1,4 +1,4 @@
-from mpu6050 import mpu6050
+from mpu6050.mpu6050 import mpu6050
 import time
 
 imu = mpu6050(0x68)

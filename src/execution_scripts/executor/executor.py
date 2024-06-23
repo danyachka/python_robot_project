@@ -11,7 +11,7 @@ from src.execution_scripts.executor.hardware_executor import HardwareExecutorMod
 from src.logger import logError
 
 if not constants.isEmulation:
-    from mpu6050 import mpu6050
+    from mpu6050.mpu6050 import mpu6050
     import RPi.GPIO as GPIO
 
 
@@ -38,7 +38,7 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
     TRIG = [25, 11, 8, 23]
     ECHO = [10, 9, 7, 24]
 
-    gyro_bias = [-1.8526727175380198, 0.4408821747229168, -1.686442607025719]
+    gyro_bias = [-5.359807053687248, -0.3483749183063451, 0.1716843987512893]
 
     cameraMatrix = np.array([[582.86635316, 0., 321.49076078],
                              [0., 584.82488533, 234.52954564],

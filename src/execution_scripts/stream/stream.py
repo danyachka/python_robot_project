@@ -59,13 +59,19 @@ def gen_text_updates():
         # Update text values here
         state = "none"
         listeners = 'none'
+        angles = "none"
+        detectedAruco = ""
 
         if analyser != None:
             state = analyser.state
             listeners = analyser.getListenersNames()
+            angles = f"abs: {analyser.absoluteAngle}, dir: {analyser.currentArucoDirectionAngle}"
+
+            if analyser.arucoInfo.isValid():
+                detectedAruco = str(analyser.arucoInfo)
 
         yieldTime = time.time()
-        yield f'data: {{ "state": "{state}", "listeners": "{listeners}" }}\n\n'
+        yield f'data: {{ "state": "{state}", "listeners": "{listeners}", "angles": "{angles}", "detectedAruco": {detectedAruco} }}\n\n'
 
 
 @app.route('/text_updates')

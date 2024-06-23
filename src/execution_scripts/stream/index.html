@@ -7,6 +7,8 @@
         const data = JSON.parse(event.data);
         document.getElementById('state').innerHTML = data.state;
         document.getElementById('listeners').innerHTML = data.listeners;
+        document.getElementById('angles').innerHTML = data.angles;
+        document.getElementById('detectedAruco').innerHTML = data.detectedAruco;
       };
     </script>
   </head>
@@ -14,5 +16,7 @@
     <img src="{{ url_for('video_feed') }}">
     <p id="state"></p>
     <p id="listeners"></p>
+    <p id="angles"></p>
+    <p id="detectedAruco"></p>
   </body>
 </html>
