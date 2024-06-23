@@ -71,7 +71,7 @@ def gen_text_updates():
                 detectedAruco = str(analyser.arucoInfo)
 
         yieldTime = time.time()
-        yield f'data: {{ "state": "{state}", "listeners": "{listeners}", "angles": "{angles}", "detectedAruco": {detectedAruco} }}\n\n'
+        yield f'data: {{ "state": "{state}", "listeners": "{listeners}", "angles": "{angles}", "detectedAruco": "{detectedAruco}" }}\n\n'
 
 
 @app.route('/text_updates')
