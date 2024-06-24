@@ -46,25 +46,30 @@ class HardwareExecutor(HardwareExecutorModel, ABC):
 
     distCfs = np.array([[-0.39671064,  0.0474044,   0.00244292, -0.00081249,  0.56456562]])
 
-    def __init__(self):
+    def __init__(self, setupGyro=True, setupSonar=True, setupCam=True, setupWheels=True, setupLaser=True):
         super().__init__()
 
         GPIO.setmode(GPIO.BCM)
         GPIO.setwarnings(False)
-        for i in range(len(self.TRIG)):
-            GPIO.setup(self.TRIG[i], GPIO.OUT)
-            GPIO.setup(self.ECHO[i], GPIO.IN)
 
-        self.cap = cv.VideoCapture(0)
+        if setupSonar:
+            for i in range(len(self.TRIG)):
+                GPIO.setup(self.TRIG[i], GPIO.OUT)
+                GPIO.setup(self.ECHO[i], GPIO.IN)
 
-        self.gyroSensor = mpu6050(0x68)
+        if setupCam:
+            self.cap = cv.VideoCapture(0)
+            if not self.cap.isOpened():
+                raise Exception("Failed to open camera")
 
-        self.__setupBottomScanner()
+        if setupGyro:
+            self.gyroSensor = mpu6050(0x68)
 
-        self.__setupWheels()
+        if setupWheels:
+            self.__setupWheels()
 
-        if not self.cap.isOpened():
-            raise Exception("Failed to open camera")
+        if setupLaser:
+            self.__setupBottomScanner()
 
     def __setupBottomScanner(self):
         #GPIO.setup(self.BOTTOM_SENSOR_PIN, GPIO.IN)
